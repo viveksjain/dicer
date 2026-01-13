@@ -1,0 +1,74 @@
+# Production values for dicer-assigner Helm chart.
+
+# Namespace configuration.
+namespace:
+  name: dicer-assigner
+  create: true
+
+# Image configuration.
+image:
+  repository: dicer-assigner
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Replica count for production.
+replicaCount: 1
+
+# Service configuration.
+service:
+  type: ClusterIP
+  port: 24500
+  name: dicer-assigner
+
+container:
+  infoPort: 7777
+
+# Target configuration paths.
+config:
+  targetConfigDirectory: /app/config/target_config
+  advancedTargetConfigDirectory: /app/config/advanced_config
+
+# Location for production (cluster URI).
+# Update this value with your production cluster URI.
+location:
+  kubernetesClusterUri: "kubernetes-cluster:prod-env/cloud-provider/domain/region/cluster-type/01"
+
+# Resource limits and requests for production.
+resources:
+  limits:
+    cpu: "4"
+    memory: "6Gi"
+  requests:
+    cpu: "3"
+    memory: "6Gi"
+
+# Probes configuration - check the actual assigner RPC port (24500).
+livenessProbe:
+  tcpSocket:
+    port: 24500
+  initialDelaySeconds: 90
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 10
+
+readinessProbe:
+  tcpSocket:
+    port: 24500
+  initialDelaySeconds: 0
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 6
+
+# Labels for the deployment.
+labels:
+  app: dicer-assigner
+  component: assigner
+  environment: production
+  managed-by: helm
+
+# TLS configuration - disabled by default. To enable TLS, provide a values file with all required
+# TLS settings. See
+# [dicer/demo/deploy/helm/dicer-assigner/values-ssl.yaml](../../demo/deploy/helm/dicer-assigner/values-ssl.yaml)
+# for an example.
+tls:
+  enabled: false

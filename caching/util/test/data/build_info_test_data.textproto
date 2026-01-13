@@ -1,0 +1,61 @@
+# proto-file: caching/util/test/proto/test_data.proto
+# proto-message: BuildInfoTestDataP
+
+test_cases: [
+  {
+    input_branch_name: "service_2024-09-04_14.57.01Z_master_164f18b3_1957847387"
+    expected_build_info: {
+      branch_name: "master"
+      branch_name_label_value: "master"
+      commit_time_label_value: "2024-09-04_14.57.01Z"
+      commit_time_epoch_millis: 1725461821000
+      commit_hash_label_value: "164f18b3"
+    }
+  },
+  {
+    input_branch_name: "service_20240904_145701Z_master_164f18b3_1957847387"
+    expected_build_info: {
+      branch_name_label_value: "unknown"
+      commit_time_label_value: "unknown"
+      commit_time_epoch_millis: 0
+      commit_hash_label_value: "unknown"
+    }
+  },
+  {
+    input_branch_name: "service_9999-99-99_99.99.99Z_master_164f18b3_1957847387"
+    expected_build_info: {
+      branch_name: "master"
+      branch_name_label_value: "master"
+      commit_time_label_value: "unknown"
+      commit_time_epoch_millis: 0
+      commit_hash_label_value: "164f18b3"
+    }
+  },
+  {
+    input_branch_name: "service_2024-09-04_14.57.01Z"
+    expected_build_info: {
+      branch_name_label_value: "unknown"
+      commit_time_label_value: "unknown"
+      commit_time_epoch_millis: 0
+      commit_hash_label_value: "unknown"
+    }
+  },
+  {
+    input_branch_name: "service_2024-09-04_14.57.01Z_master_af124164f18b3_1957847387"
+    expected_build_info: {
+      branch_name_label_value: "unknown"
+      commit_time_label_value: "unknown"
+      commit_time_epoch_millis: 0
+      commit_hash_label_value: "unknown"
+    }
+  },
+  {
+    input_branch_name: "service_2024-09-04_14.57.01Z_master_af124164f18b3_1957847387"
+    expected_build_info: {
+      branch_name_label_value: "unknown"
+      commit_time_label_value: "unknown"
+      commit_time_epoch_millis: 0
+      commit_hash_label_value: "unknown"
+    }
+  }
+]

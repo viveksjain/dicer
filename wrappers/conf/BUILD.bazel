@@ -1,0 +1,124 @@
+load("@rules_scala//scala:scala.bzl", "scala_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+scala_library(
+    name = "constants",
+    srcs = [
+        "src/Constants.scala",
+    ],
+)
+
+scala_library(
+    name = "core",
+    srcs = [
+        "src/package.scala",
+    ],
+    exports = ["@maven//:com_typesafe_config"],
+    deps = [
+        "@maven//:com_typesafe_config",
+        "@maven//:commons_io_commons_io",
+    ],
+)
+
+scala_library(
+    name = "parser",
+    srcs = [
+        "src/ConfigParser.scala",
+    ],
+    deps = [
+        "//wrappers/util:jsonutil",
+    ],
+)
+
+scala_library(
+    name = "location",
+    srcs = [
+        "src/LocationConf.scala",
+    ],
+    exports = [
+        ":dbconf",
+    ],
+    deps = [
+        ":dbconf",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
+    ],
+)
+
+scala_library(
+    name = "location_test",
+    testonly = True,
+    srcs = [
+        "test/LocationConfTestUtils.scala",
+    ],
+    deps = [
+        ":dbconf",
+        ":location",
+    ],
+)
+
+scala_library(
+    name = "dbconf",
+    srcs = [
+        "src/DbConf.scala",
+        "src/DbConfImpl.scala",
+    ],
+    exports = [
+        ":parser",
+        "//wrappers/logging",  # DbConfImpl extends ConsoleLogging.
+    ],
+    deps = [
+        ":core",
+        ":parser",
+        "//wrappers/logging",
+        "//wrappers/util:jsonutil",
+        "@maven//:com_typesafe_config",
+    ],
+)
+
+scala_library(
+    name = "rpc-port-conf",
+    srcs = ["src/RPCPortConf.scala"],
+    exports = [
+        ":dbconf",
+    ],
+    deps = [
+        ":dbconf",
+    ],
+)
+
+scala_library(
+    name = "project",
+    srcs = ["src/Project.scala"],
+)
+
+scala_library(
+    name = "project-conf",
+    srcs = ["src/ProjectConf.scala"],
+    deps = [
+        ":core",
+        ":dbconf",
+        ":parser",
+        ":project",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
+        "@maven//:com_typesafe_config",
+    ],
+)
+
+scala_library(
+    name = "server-conf",
+    srcs = ["src/DatabricksServerConf.scala"],
+    exports = [
+        ":dbconf",
+    ],
+    deps = [
+        ":dbconf",
+    ],
+)

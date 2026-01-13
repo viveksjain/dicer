@@ -1,0 +1,27 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_scala//scala_proto:scala_proto.bzl", "scala_proto_library")
+
+package(
+    default_visibility = ["//dicer:internal"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+proto_library(
+    name = "target_proto_library",
+    srcs = ["target.proto"],
+    deps = [
+        "//caching/external/proto:config_scope_specification_proto_library",
+        "//wrappers/rpc:scalapb_proto",
+    ],
+)
+
+scala_proto_library(
+    name = "proto",
+    visibility = ["//dicer:internal"],
+    deps = [":target_proto_library"],
+)

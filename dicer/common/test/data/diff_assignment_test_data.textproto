@@ -1,0 +1,291 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: DiffAssignmentTestDataP
+
+invariant_validity_test_cases: [
+  # Loose incarnation for consistent assignment.
+  {
+    expected_error: "Consistent assignment cannot be in the loose incarnation"
+    diff_assignment {
+      is_consistent: true
+      generation: { incarnation: 1 number: 42 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" }
+          generation: { incarnation: 1 number: 42 }
+          resources: ["Pod1"]
+        }
+      ]
+    }
+  },
+  # Partial diff assignment in loose incarnation.
+  {
+    expected_error: "Assignments in the loose incarnation cannot have diffs"
+    diff_assignment {
+      generation: { incarnation: 1 number: 42 }
+      partial_diff_generation: { incarnation: 1 number: 42 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Balin" }
+          generation: { incarnation: 45 number: 70 }
+          resources: ["Pod1"]
+        }
+      ]
+    }
+  },
+  # Diff generation in different incarnation from assignment generation.
+  {
+    expected_error: "must be in the same incarnation as the assignment generation"
+    diff_assignment {
+      generation: { incarnation: 2 number: 42 }
+      partial_diff_generation: { incarnation: 4 number: 42 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Balin" }
+          generation: { incarnation: 4 number: 42 }
+          resources: ["Pod1"]
+        }
+      ]
+    }
+  },
+  # Diff generation higher than assignment generation.
+  {
+    expected_error: "must be less than or equal to the assignment generation"
+    diff_assignment {
+      generation: { incarnation: 2 number: 42 }
+      partial_diff_generation: { incarnation: 2 number: 43 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 43 }
+          resources: ["Pod1"]
+        }
+      ]
+    }
+  }
+]
+
+round_trip_test_cases: [
+  {
+    generation: { incarnation: 45 number: 96 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 45 number: 70 }
+        resources: ["Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { incarnation: 45 number: 24 }
+        resources: ["Pod0", "Pod3"]
+      },
+      {
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation: { incarnation: 45 number: 45 }
+        resources: ["Pod0", "Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Nori" high_exclusive: "Thorin" }
+        generation: { incarnation: 45 number: 67 }
+        resources: ["Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Thorin" }
+        generation: { incarnation: 45 number: 70 }
+        resources: ["Pod2"]
+      }
+    ]
+  },
+  {
+    generation: { incarnation: 42 number: 100 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 42 number: 70 }
+        resources: ["Pod100"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { incarnation: 42 number: 24 }
+        resources: ["Pod200", "Pod300"]
+      },
+      {
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation: { incarnation: 42 number: 45 }
+        resources: ["Pod100", "Pod200", "Pod300"]
+      },
+      {
+        slice: { low_inclusive: "Nori" high_exclusive: "Thorin" }
+        generation: { incarnation: 42 number: 67 }
+        resources: ["Pod200", "Pod400"]
+      },
+      {
+        slice: { low_inclusive: "Thorin" }
+        generation: { incarnation: 42 number: 70 }
+        resources: ["Pod200"]
+      }
+    ]
+  }
+]
+
+assigned_resources_test_cases: [
+  {
+    diff_assignment {
+      generation { incarnation: 3 number: 67 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Dori" }
+          generation { incarnation: 3 number: 34 }
+          resources: ["Pod2", "Pod3", "Pod101", "Pod102"]
+        },
+        {
+          slice { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation { incarnation: 3 number: 24 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation { incarnation: 3 number: 45 }
+          resources: ["Pod1", "Pod103"]
+        },
+        {
+          slice { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation { incarnation: 3 number: 67 }
+          resources: ["Pod2"]
+        },
+        {
+          slice { low_inclusive: "Nori" }
+          generation { incarnation: 3 number: 34 }
+          resources: ["Pod3", "Pod100"]
+        }
+      ]
+    }
+    expected_assigned_resources: ["Pod0", "Pod1", "Pod2", "Pod3", "Pod100", "Pod101", "Pod102", "Pod103"]
+  },
+  {
+    diff_assignment {
+      generation { incarnation: 4 number: 68 }
+      partial_diff_generation: { incarnation: 4 number: 56 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Dori" }
+          generation { incarnation: 4 number: 34 }
+          resources: ["Pod2", "Pod3", "Pod102"]
+        },
+        {
+          slice { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation { incarnation: 4 number: 24 }
+          resources: ["Pod0"]
+        },
+        {
+          slice { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation { incarnation: 4 number: 55 }
+          resources: ["Pod2"]
+        }
+      ]
+    }
+    expected_assigned_resources: ["Pod0", "Pod2", "Pod3", "Pod102"]
+  }
+]
+
+valid_diff_assignment {
+  generation { incarnation: 45 number: 96 }
+  slice_assignments: [
+    {
+      slice { low_inclusive: "" high_exclusive: "Balin" }
+      generation { incarnation: 45 number: 70 }
+      resources: ["Pod1", "Pod2"]
+    },
+    {
+      slice { low_inclusive: "Balin" high_exclusive: "Fili" }
+      generation { incarnation: 45 number: 24 }
+      resources: ["Pod0", "Pod3"]
+    },
+    {
+      slice { low_inclusive: "Fili" high_exclusive: "Nori" }
+      generation { incarnation: 45 number: 45 }
+      resources: ["Pod0", "Pod1", "Pod2"]
+    },
+    {
+      slice { low_inclusive: "Nori" high_exclusive: "Thorin" }
+      generation { incarnation: 45 number: 67 }
+      resources: ["Pod2"]
+    },
+    {
+      slice { low_inclusive: "Thorin" }
+      generation { incarnation: 45 number: 70 }
+      resources: ["Pod2"]
+    }
+  ]
+}
+
+from_proto_validity_test_cases: [
+  # Empty generation.
+  {
+    clear_generation: true
+    expected_error: "Assignment must have non-empty generation"
+  },
+  # Empty SliceAssignments.
+  {
+    select_slice_assignments: {}
+    expected_error: "Must not be empty"
+  },
+  # Empty resources.
+  {
+    select_resources: {}
+    expected_error: "out of range"
+  },
+  # Missing resources.
+  {
+    select_resources: { indexes: [0, 1, 2] }
+    expected_error: "out of range"
+  },
+  # Gap at the beginning of SliceAssignments.
+  {
+    select_slice_assignments: { indexes: [1, 2, 3, 4] }
+    expected_error: "First entry must start at \"\""
+  },
+  # Gap between successive slices.
+  {
+    select_slice_assignments: { indexes: [0, 2, 3, 4] }
+    expected_error: "Gap between successive entries"
+  },
+  # Gap at end of SliceAssignments.
+  {
+    select_slice_assignments: { indexes: [0, 1] }
+    expected_error: "Last entry must have Infinity upper bound"
+  },
+  # Unordered SliceAssignments.
+  {
+    select_slice_assignments: { indexes: [0, 2, 1] }
+    expected_error: "Gap between successive entries"
+  },
+  # Overlapped SliceAssignments.
+  {
+    select_slice_assignments: { indexes: [0, 0, 1, 2, 3, 4] }
+    expected_error: "Overlap between successive entries"
+  },
+  # Slice has generation in a different incarnation from the assignment generation.
+  {
+    alter_slice_generation {
+      slice_index: 1
+      new_generation { incarnation: 42 number: 42 }
+    }
+    expected_error: "Slice generation 42#42 (1970-01-01T00:00:00.042Z) must be in the same incarnation as the assignment generation 45#96 (1970-01-01T00:00:00.096Z)"
+  },
+  # Slice has generation that is higher than the assignment generation.
+  {
+    alter_slice_generation {
+      slice_index: 1
+      new_generation { incarnation: 45 number: 100 }
+    }
+    expected_error: "Slice generation 45#100 (1970-01-01T00:00:00.100Z) must be less than or equal to the assignment generation 45#96 (1970-01-01T00:00:00.096Z)"
+  },
+  # Slice has a negative resource index.
+  {
+    alter_slice_resources {
+      slice_index: 0
+      new_resource_indices: [-1]
+    }
+    expected_error: "Resource index -1 out of range"
+  }
+]

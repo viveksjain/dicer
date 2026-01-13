@@ -1,0 +1,15 @@
+# Build the Docker image with JDK 17.
+FROM eclipse-temurin:17-jdk
+
+# Copies the pre-built Assigner JAR into the container.
+COPY dicer/demo/assigner.jar /app/assigner.jar
+
+# Copies the dev target and advanced configs into the container.
+COPY dicer/external/config/dev/demo-cache-app.textproto /app/config/target_config/demo-cache-app.textproto 
+COPY dicer/assigner/advanced_config/dev/demo-cache-app.textproto /app/config/advanced_config/demo-cache-app.textproto 
+
+# Expose the Assigner watch gRPC port.
+EXPOSE 24500
+
+# Set entrypoint
+ENTRYPOINT ["java", "-jar", "/app/assigner.jar"]

@@ -1,0 +1,5 @@
+# proto-file: dicer/common/proto/advanced_target_config.proto
+# proto-message: AdvancedTargetConfigP
+
+default_config {
+}

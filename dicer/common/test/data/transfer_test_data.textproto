@@ -1,0 +1,17 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: TransferTestDataP
+
+proto_validity_test_cases: [
+  {
+    expected_error: "Resource index 1 out of range."
+    transfer: { id: 42 from_resource_id: 1 }
+  },
+  {
+    expected_error: "Resource index -1 out of range."
+    transfer: { id: 42 from_resource_id: -1 }
+  },
+  {
+    expected_error: "from_resource_id not present"
+    transfer: { id: 42 }
+  }
+]

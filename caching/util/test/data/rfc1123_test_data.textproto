@@ -1,0 +1,27 @@
+# proto-file: caching/util/test/proto/test_data.proto
+# proto-message: Rfc1123TestDataP
+
+longest_valid_string: "name-with-63-characters-567890123456789012345678901234567890123"
+
+valid_strings: [
+  "a",
+  "0",
+  "aa",
+  "a0",
+  "0a",
+  "softstore-storelet",
+  "has-1-digit-in-the-middle",
+  "name-with-63-characters-567890123456789012345678901234567890123"
+]
+
+too_long_string: "name-with-64-characters-5678901234567890123456789012345678901234"
+
+invalid_strings: [
+  "-starts-with-dash",
+  "ends-with-dash-",
+  "contains_underscore",
+  "contains-Uppercase-letter",
+  "contains-misc-punctuation!",
+  "contains-unicode-characters-😀",
+  "name-with-64-characters-5678901234567890123456789012345678901234"
+]

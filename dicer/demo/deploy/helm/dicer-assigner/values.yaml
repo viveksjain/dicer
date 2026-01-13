@@ -1,0 +1,19 @@
+# Demo environment overrides for dicer-assigner Helm chart.
+#
+# Usage: helm install dicer-assigner dicer/production/assigner/ -f dicer/demo/deploy/helm/dicer-assigner/values.yaml
+
+image:
+  tag: demo
+  pullPolicy: Never # Use locally loaded image for demo
+
+replicaCount: 1
+
+# Location for demo (cluster URI).
+location:
+  kubernetesClusterUri: "kubernetes-cluster:test-env1/cloud-provider1/domain1/region1/cluster-type1/01"
+
+labels:
+  app: dicer-assigner
+  component: assigner
+  environment: demo
+  managed-by: helm

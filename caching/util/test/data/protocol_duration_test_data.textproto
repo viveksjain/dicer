@@ -1,0 +1,30 @@
+# proto-file: caching/util/test/proto/test_data.proto
+# proto-message: ProtocolDurationTestDataP
+
+valid_cases: [
+  # Zero or small durations.
+  { name: "Zero duration in seconds" seconds: 0 },
+  { name: "Zero duration in milliseconds" millis: 0 },
+  { name: "Zero duration in microseconds" micros: 0 },
+  { name: "Zero duration in nanoseconds" nanos: 0 },
+  { name: "Positive duration in seconds" seconds: 42 },
+  { name: "Positive duration in milliseconds" millis: 5000 },
+  { name: "Positive duration in microseconds" micros: 39 },
+  { name: "Positive duration in nanoseconds" nanos: 123456 },
+  # Max or near max durations.
+  { name: "Just below max duration in seconds" seconds: 9223372036 },
+  { name: "Just below max duration in milliseconds" millis: 9223372036854 },
+  { name: "Just below max duration in microseconds" micros: 9223372036854775 },
+  { name: "Max duration in nanoseconds" nanos: 9223372036854775807 } # max int64
+]
+
+invalid_cases: [
+  # Just above max durations.
+  { name: "Above max duration in seconds" seconds: 9223372037 },
+  { name: "Above max duration in milliseconds" millis: 9223372036855 },
+  { name: "Above max duration in microseconds" micros: 9223372036854776 },
+  # int64 max but in units other nanoseconds
+  { name: "int64.MAX seconds" seconds: 9223372036854775807 },
+  { name: "int64.MAX milliseconds" millis: 9223372036854775807 },
+  { name: "int64.MAX microseconds" micros: 9223372036854775807 }
+]

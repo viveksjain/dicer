@@ -1,0 +1,22 @@
+load("@rules_scala//scala:scala.bzl", "scala_library")
+
+package(
+    default_visibility = ["//dicer:caching"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+filegroup(
+    name = "log4j2",
+    srcs = ["log4j2.xml"],
+)
+
+scala_library(
+    name = "log4j_config",
+    resource_strip_prefix = "dicer/resources/",
+    resources = [":log4j2"],
+)

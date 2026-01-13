@@ -1,0 +1,57 @@
+syntax = "proto2";
+
+package dicer.demo;
+
+import "scalapb.proto";
+
+option java_package = "com.databricks.api.proto.dicer.demo";
+option java_generate_equals_and_hash = true;
+option java_outer_classname = "DemoProto";
+option java_multiple_files = true;
+option (scalapb.options) = {
+  package_name: "com.databricks.api.proto.dicer.demo",
+  flat_package: true,
+};
+
+// Request to get a value for a given key.
+message GetValueRequestP {
+  // The integer key to look up (0-10000 range for demo).
+  optional int32 key = 1;
+}
+
+message GetValueResponseP {
+  // The string value associated with the key.
+  optional string value = 1;
+}
+
+// Request to put a key-value pair.
+message PutValueRequestP {
+  // The integer key.
+  optional int32 key = 1;
+  // The string value to store.
+  optional string value = 2;
+}
+
+message PutValueResponseP {
+  // Empty response
+}
+
+// Request to delete a key.
+message DeleteValueRequestP {
+  // The integer key to delete.
+  optional int32 key = 1;
+}
+
+message DeleteValueResponseP {
+  // Empty response
+}
+
+// A simple key-value cache service, sharded by Dicer.
+service DemoService {
+  // Gets the value for a given key.
+  rpc GetValue(GetValueRequestP) returns (GetValueResponseP) {}
+  // Puts a key-value pair.
+  rpc PutValue(PutValueRequestP) returns (PutValueResponseP) {}
+  // Deletes a key.
+  rpc DeleteValue(DeleteValueRequestP) returns (DeleteValueResponseP) {}
+}

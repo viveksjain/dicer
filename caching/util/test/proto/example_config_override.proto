@@ -1,0 +1,40 @@
+syntax = "proto2";
+
+package databricks.caching.test;
+
+import "scalapb.proto";
+import "caching/external/proto/config_scope_specification.proto";
+
+option java_package = "com.databricks.api.proto.caching.util.test";;
+option java_generate_equals_and_hash = true;
+option java_outer_classname = "ExampleConfigOverrideProto";
+option java_multiple_files = true;
+option (scalapb.options) = {
+  package_name: "com.databricks.api.proto.caching.util.test",
+  flat_package: true,
+};
+
+// Below defines an example, test only config override proto message to test the functionality
+// for the `ShardP` and its utility scala class `Shard`.
+// Specification for the example configuration override.
+message TestOnlyExampleConfigOverrideP {
+  // A list of distinct shards for which the override should apply
+  repeated databricks.caching.ConfigScopeP override_shards = 1;
+
+  // Optional overrides for default values defined in TestOnlyExampleConfigFieldsP.
+  optional TestOnlyExampleConfigFieldsP override_config = 2;
+}
+
+// A sub-fields message for `TestOnlyExampleConfigFieldsP`.
+message TestOnlySubFieldsP {
+  optional string b_field = 1; // Intentionally out of order to test the order of fields.
+  optional string c_field = 2;
+  optional string a_field = 3;
+}
+
+// Specification for the example config fields.
+message TestOnlyExampleConfigFieldsP {
+  optional int64 int_field = 1;
+  repeated string string_array_field = 2;
+  repeated TestOnlySubFieldsP nested_field_array = 3;
+}

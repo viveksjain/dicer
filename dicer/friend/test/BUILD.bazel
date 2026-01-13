@@ -1,0 +1,80 @@
+load("@rules_scala//scala:scala.bzl", "scala_test")
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+scala_test(
+    name = "slicelet_accessor_suite",
+    srcs = ["SliceletAccessorSuite.scala"],
+    timeout = "short",
+    deps = [
+        "//caching/util:sequential_execution_context",
+        "//caching/util:test_util",
+        "//dicer/assigner/config:internal_target_config_map",
+        "//dicer/assigner:assigner_slicez",
+        "//dicer/client:slicelet_impl",
+        "//dicer/client:test_client",
+        "//dicer/common:assignment_core",
+        "//dicer/common:generation",
+        "//dicer/common:squid",
+        "//dicer/common:test_common",
+        "//dicer/common:test_environment",
+        "//dicer/external:conf",
+        "//dicer/external:slicelet",
+        "//dicer/friend:mutable_slice_map",
+        "//dicer/friend:slice_map",
+        "//dicer/friend:slicelet_accessor",
+        "//dicer/friend:state_transfer_common",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_test(
+    name = "slice_map_suite",
+    srcs = ["SliceMapSuite.scala"],
+    data = ["//dicer/common/test/data"],
+    timeout = "short",
+    deps = [
+        "//caching/util:test_util",
+        "//dicer/common/test/proto:test_data_proto_scala_lib",
+        "//dicer/common:assignment_core",
+        "//dicer/common:generation",
+        "//dicer/common:slice_helper",
+        "//dicer/common:squid",
+        "//dicer/common:test_common",
+        "//dicer/external:external_common",
+        "//dicer/friend/proto:friend_protolib",
+        "//dicer/friend:mutable_slice_map",
+        "//dicer/friend:slice_map",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "mutable_slice_map_suite",
+    srcs = ["MutableSliceMapSuite.scala"],
+    timeout = "short",
+    deps = [
+        "//caching/util:test_util",
+        "//dicer/common:generation",
+        "//dicer/common:squid",
+        "//dicer/common:test_common",
+        "//dicer/external:external_common",
+        "//dicer/friend:mutable_slice_map",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)

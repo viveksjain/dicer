@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><Configuration status="INFO" packages="com.databricks.logging.log4j" shutdownHook="disable">
+    <Appenders>
+        <Console name="Console" follow="true">
+            <PatternLayout pattern="%d{yyyy/MM/dd HH:mm:ss.SSS} %p %c %X{traceInfo}: %.16384m%n"/>
+        </Console>
+        <File name="File" fileName="service.log">
+            <PatternLayout pattern="%d{yyyy/MM/dd HH:mm:ss.SSS} %p %c %X{traceInfo}: %.16384m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="File"/>
+            <AppenderRef ref="Console"/>
+        </Root>
+        <Logger name="com.databricks" level="INFO"/>
+        <Logger name="com.databricks.conf" level="WARN"/>
+    </Loggers>
+</Configuration>
+<!--
+  Copied from universe/common/logging/src/test/resources/log4j2.xml with modifications:
+  - SSS added to PatternLayout for millisecond precision
+  - Appender names changed:
+    * "console" -> "Console" (to match com.databricks.logging.log4j.TrivialConfiguration)
+    * "file" -> "File" (to follow the same naming convention as Console)
+-->

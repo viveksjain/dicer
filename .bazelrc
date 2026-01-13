@@ -1,0 +1,7 @@
+# Enforce JDK 17 for tests - this is the version we currently use in production. This is needed for
+# tests to pass on CI.
+common --java_runtime_version=remotejdk_17
+# Enable support for UTF-8 in test output.
+common --action_env=LANG=C.UTF-8
+# Needed to use precompiled protoc, see MODULE.bazel for more details.
+build --incompatible_enable_proto_toolchain_resolution

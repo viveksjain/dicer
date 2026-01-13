@@ -1,0 +1,40 @@
+load("@rules_scala//scala:scala.bzl", "scala_binary", "scala_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+scala_library(
+    name = "demo_client_lib",
+    srcs = ["DemoClientMain.scala"],
+    deps = [
+        "//caching/util:prefix_logger",
+        "//caching/util:server_conf",
+        "//dicer/demo/proto:demo_proto",
+        "//dicer/demo/src/common",
+        "//dicer/external:clerk",
+        "//dicer/external:conf",
+        "//dicer/external:external_common",
+        "//wrappers/conf:core",
+        "//wrappers/conf:project",
+        "//wrappers/conf:project-conf",
+        "//wrappers/conf:rpc-port-conf",
+        "//wrappers/logging",
+        "//wrappers/rpc:rpc_ssl",
+        "//wrappers/rpc:rpc_tls",
+        "//wrappers/util:databricks_main",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_binary(
+    name = "demo_client_main",
+    main_class = "com.databricks.dicer.demo.client.DemoClientMain",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":demo_client_lib",
+        "//dicer/resources:log4j_config",
+    ],
+)

@@ -1,0 +1,1394 @@
+load("@rules_scala//scala:scala.bzl", "scala_library", "scala_macro_library", "scala_test")
+
+package(
+    default_visibility = ["//caching:all_caching"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+package_group(
+    name = "internal",
+    packages = [
+        "//caching/rust/util/...",
+        "//caching/util/...",
+    ],
+)
+
+scala_library(
+    name = "server_conf",
+    srcs = ["src/ServerConf.scala"],
+    exports = [
+        "//wrappers/conf:rpc-port-conf",
+        "//wrappers/conf:server-conf",
+        "//wrappers/feature-flag",
+        "//wrappers/rpc:rpc_ssl",
+    ],
+    deps = [
+        "//wrappers/conf:constants",
+        "//wrappers/conf:rpc-port-conf",
+        "//wrappers/conf:server-conf",
+        "//wrappers/feature-flag",
+        "//wrappers/rpc:rpc_ssl",
+    ],
+)
+
+scala_library(
+    name = "generic_rpc_service_builder",
+    srcs = ["src/GenericRpcServiceBuilder.scala"],
+    deps = [
+        "//wrappers/rpc:rpc_context",
+        "@maven//:io_grpc_grpc_api",
+    ],
+)
+
+scala_macro_library(
+    name = "assert_macros",
+    srcs = ["src/AssertMacros.scala"],
+    deps = [
+        "@maven//:org_scala_lang_scala_library",
+        "@maven//:org_scala_lang_scala_reflect",
+    ],
+)
+
+scala_library(
+    name = "ascii_table",
+    srcs = ["src/AsciiTable.scala"],
+)
+
+scala_test(
+    name = "ascii_table_test",
+    srcs = ["test/AsciiTableSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":ascii_table",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "bytes",
+    srcs = ["src/Bytes.scala"],
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "bytes_test",
+    srcs = ["test/BytesSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":bytes",
+        ":prefix_logger",
+        ":test_util",
+        "//wrappers/rpc:rich_scalapb",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "status_utils",
+    srcs = ["src/StatusUtils.scala"],
+    deps = [
+        "//caching/util:pipeline",
+        "//wrappers/logging",
+        "//wrappers/rpc:rpc_exceptions",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "protocol_duration_test",
+    srcs = ["test/ProtocolDurationSuite.scala"],
+    data = ["//caching/util/test/data"],
+    timeout = "short",
+    deps = [
+        ":test_util",
+        "//caching/util/test/proto:test_data_proto_scala_lib",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "unix_time_version",
+    srcs = ["src/UnixTimeVersion.scala"],
+)
+
+scala_test(
+    name = "unix_time_version_test",
+    srcs = ["test/UnixTimeVersionSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":unix_time_version",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_test(
+    name = "status_utils_common_test",
+    srcs = ["test/StatusUtilsCommonSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":status_utils",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_etcd_jetcd_core",
+        "@maven//:io_etcd_jetcd_grpc",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "byte_size",
+    srcs = ["src/ByteSize.scala"],
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "byte_size_test",
+    srcs = ["test/ByteSizeSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":byte_size",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "cancellable",
+    srcs = ["src/Cancellable.scala"],
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "cancellable_test",
+    srcs = ["test/CancellableSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":cancellable",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "config_provider_trait",
+    srcs = ["src/ConfigProvider.scala"],
+    visibility = ["//caching:all_caching"],
+    deps = [
+        ":config_scope",
+        ":safe_config_util",
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+    ],
+)
+
+scala_library(
+    name = "delegating_sequential_execution_context",
+    srcs = ["test/DelegatingSequentialExecutionContext.scala"],
+    deps = [
+        ":context_aware_util",
+        ":sequential_execution_context",
+        ":typed_clock",
+        "//wrappers/util:executor",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "ewma_counter",
+    srcs = ["src/EwmaCounter.scala"],
+    deps = ["@maven//:com_google_code_findbugs_jsr305"],
+)
+
+scala_test(
+    name = "ewma_counter_test",
+    srcs = [
+        "test/EwmaAccumulatorSuite.scala",
+        "test/EwmaCounterSuite.scala",
+    ],
+    data = ["//caching/util/test/data"],
+    timeout = "short",
+    deps = [
+        ":assert_macros",
+        ":ewma_counter",
+        ":test_util",
+        ":typed_clock",
+        "//caching/util/test/proto:test_data_proto_scala_lib",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_math3",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "assert_macros_test",
+    srcs = ["test/AssertMacrosSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":assert_macros",
+        "//caching/util:test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "exponential_backoff",
+    srcs = ["src/ExponentialBackoff.scala"],
+)
+
+scala_test(
+    name = "exponential_backoff_test",
+    srcs = ["test/ExponentialBackoffSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":exponential_backoff",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "fake_s2s_proxy",
+    srcs = ["test/FakeS2SProxy.scala"],
+    testonly = True,
+    deps = [
+        "//caching/util:lock",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "fake_sequential_execution_context",
+    srcs = [
+        "test/FakeSequentialExecutionContext.scala",
+        "test/FakeSequentialExecutionContextPool.scala",
+    ],
+    exports = [
+        ":fake_typed_clock",
+        ":sequential_execution_context",
+    ],
+    deps = [
+        ":context_aware_util",
+        ":delegating_sequential_execution_context",
+        ":fake_typed_clock",
+        ":sequential_execution_context",
+    ],
+)
+
+scala_test(
+    name = "fake_sequential_execution_context_test",
+    srcs = ["test/FakeSequentialExecutionContextSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":fake_sequential_execution_context",
+        ":fake_typed_clock",
+        ":sequential_execution_context",
+        ":test_util",
+        ":ticker_time",
+        ":typed_clock",
+        "//caching/util:lock",
+        "//wrappers/logging:activity-context-factory",
+        "//wrappers/logging:sourcecode",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+scala_library(
+    name = "fake_typed_clock",
+    srcs = ["test/FakeTypedClock.scala"],
+    exports = [
+        ":typed_clock",
+        "//wrappers/util:fakeclock",
+    ],
+    deps = [
+        ":ticker_time",
+        ":typed_clock",
+        "//wrappers/util:fakeclock",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_test(
+    name = "fake_typed_clock_test",
+    srcs = ["test/FakeTypedClockSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":fake_typed_clock",
+        ":ticker_time",
+        ":typed_clock",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_library(
+    name = "test_state_machine_driver",
+    srcs = ["test/TestStateMachineDriver.scala"],
+    testonly = True,
+    deps = [
+        ":state_machine",
+        ":ticker_time",
+    ],
+)
+
+scala_library(
+    name = "intrusive_min_heap",
+    srcs = ["src/IntrusiveMinHeap.scala"],
+    visibility = ["//caching:all_caching"],
+    deps = [":assert_macros"],
+)
+
+scala_test(
+    name = "intrusive_min_heap_test",
+    srcs = ["test/IntrusiveMinHeapSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":intrusive_min_heap",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "lossy_ewma_counter",
+    srcs = ["src/LossyEwmaCounter.scala"],
+    deps = [
+        ":assert_macros",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_test(
+    name = "lossy_ewma_counter_test",
+    srcs = [
+        "test/LossyEwmaCounterReference.scala",
+        "test/LossyEwmaCounterReferenceSuite.scala",
+        "test/LossyEwmaCounterSuite.scala",
+    ],
+    data = ["//caching/util/test/data"],
+    timeout = "short",
+    deps = [
+        ":lossy_ewma_counter",
+        ":metric_utils",
+        ":test_util",
+        "//caching/util/test/proto:test_data_proto_scala_lib",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_math3",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "non_reentrant_lock",
+    srcs = ["src/NonReentrantLock.scala"],
+    deps = ["@maven//:com_google_code_findbugs_jsr305"],
+)
+
+scala_test(
+    name = "non_reentrant_lock_test",
+    srcs = ["test/NonReentrantLockSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":lock",
+        ":non_reentrant_lock",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "//wrappers/util:executor",
+    ],
+)
+
+scala_library(
+    name = "safe_config_util",
+    srcs = ["src/SafeConfigUtil.scala"],
+    visibility = ["//caching:all_caching"],
+)
+
+scala_test(
+    name = "safe_config_util_test",
+    srcs = ["test/SafeConfigUtilSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":safe_config_util",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "state_machine",
+    srcs = ["src/StateMachineDriver.scala"],
+    deps = [
+        ":cancellable",
+        ":hybrid_concurrency_domain",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":ticker_time",
+        ":typed_clock",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "status_or",
+    srcs = ["src/StatusOr.scala"],
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "status_or_test",
+    srcs = ["test/StatusOrSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":status_or",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "context_aware_util",
+    srcs = [
+        "src/ContextAwareUtil.scala",
+    ],
+    deps = [
+        "//wrappers/util:executor",
+    ],
+)
+
+
+scala_library(
+    name = "sequential_execution_context",
+    srcs = [
+        "src/SequentialExecutionContext.scala",
+        "src/SequentialExecutionContextPool.scala",
+    ],
+    exports = [
+        ":cancellable",
+        ":context_aware_util",
+        "//wrappers/util:executor",
+    ],
+    deps = [
+        ":cancellable",
+        ":context_aware_util",
+        ":intrusive_min_heap",
+        ":prefix_logger",
+        ":ticker_time",
+        ":typed_clock",
+        "//caching/util:lock",
+        "//wrappers/util:executor",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "sequential_execution_context_test",
+    srcs = ["test/SequentialExecutionContextSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":fake_sequential_execution_context",
+        ":fake_typed_clock",
+        ":metric_utils",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":test_util",
+        ":ticker_time",
+        ":typed_clock",
+        "//caching/util:lock",
+        "//wrappers/logging:activity-context-factory",
+        "//wrappers/logging:sourcecode",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "state_machine_test",
+    srcs = ["test/StateMachineDriverSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":delegating_sequential_execution_context",
+        ":fake_sequential_execution_context",
+        ":hybrid_concurrency_domain",
+        ":metric_utils",
+        ":pipeline",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":state_machine",
+        ":test_state_machine_driver",
+        ":test_util",
+        ":ticker_time",
+        ":typed_clock",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_test(
+    name = "assertion_waiter_test",
+    srcs = ["test/AssertionWaiterSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":sequential_execution_context",
+        ":test_util",
+        ":ticker_time",
+        ":typed_clock",
+        "//wrappers/logging:sourcecode",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "ticker_time",
+    srcs = ["src/TickerTime.scala"],
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "ticker_time_test",
+    srcs = ["test/TickerTimeSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":test_util",
+        ":ticker_time",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_macro_library(
+    name = "test_util",
+    exports = [
+        ":assertion_waiter",
+        ":log_capturer",
+        ":logging_stream_callback",
+        ":server_test_utils",
+        ":test_utils",
+    ],
+    testonly = True,
+    deps = [
+        ":assertion_waiter",
+        ":log_capturer",
+        ":logging_stream_callback",
+        ":server_test_utils",
+        ":test_utils",
+    ],
+)
+
+scala_library(
+    name = "assertion_waiter",
+    srcs = ["test/AssertionWaiter.scala"],
+    exports = [
+        "//wrappers/logging:sourcecode",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+    testonly = True,
+    deps = [
+        ":prefix_logger",
+        ":sequential_execution_context",
+        "//wrappers/logging:sourcecode",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_library(
+    name = "log_capturer",
+    srcs = ["test/LogCapturer.scala"],
+    testonly = True,
+    deps = [
+        ":assertion_waiter",
+        ":lock",
+        ":prefix_logger",
+        "//wrappers/logging",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j2_impl",
+    ],
+)
+
+scala_library(
+    name = "logging_stream_callback",
+    srcs = ["test/LoggingStreamCallback.scala"],
+    testonly = True,
+    deps = [
+        ":assertion_waiter",
+        ":lock",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":status_or",
+        ":watch_cell",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "server_test_utils",
+    srcs = ["test/ServerTestUtils.scala"],
+    exports = ["//wrappers/rpc:rpc_server"],
+    testonly = True,
+    deps = [
+        ":prefix_logger",
+        "//wrappers/logging",
+        "//wrappers/rpc:client",
+        "//wrappers/rpc:rpc_context",
+        "//wrappers/rpc:rpc_server",
+        "//wrappers/rpc:rpc_testing",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_typesafe_config",
+        "@maven//:io_grpc_grpc_api",
+    ],
+)
+
+scala_library(
+    name = "test_utils",
+    srcs = ["test/TestUtils.scala"],
+    testonly = True,
+    deps = [
+        ":prefix_logger",
+        "//wrappers/rpc:client",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "//wrappers/util:reflection",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "typed_clock",
+    srcs = ["src/TypedClock.scala"],
+    exports = [":ticker_time"],
+    deps = [":ticker_time"],
+)
+
+scala_macro_library(
+    name = "prefix_logger",
+    srcs = [
+        "src/CachingErrorCode.scala",
+        "src/PrefixLogger.scala",
+    ],
+    exports = [
+        ":typed_clock",
+        "//wrappers/logging:sourcecode",
+    ],
+    deps = [
+        ":ticker_time",
+        ":typed_clock",
+        "//wrappers/logging",
+        "//wrappers/logging:sourcecode",
+        "@maven//:io_prometheus_simpleclient",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j2_impl",
+    ],
+)
+
+scala_test(
+    name = "prefix_logger_test",
+    srcs = ["test/PrefixLoggerSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":fake_typed_clock",
+        ":metric_utils",
+        ":prefix_logger",
+        ":test_util",
+        "//wrappers/logging",
+        "//wrappers/logging:ctx",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_slf4j2_impl",
+    ],
+)
+
+scala_library(
+    name = "rfc1123",
+    srcs = ["src/Rfc1123.scala"],
+)
+
+scala_test(
+    name = "rfc1123_test",
+    srcs = ["test/Rfc1123Suite.scala"],
+    data = ["//caching/util/test/data"],
+    timeout = "short",
+    deps = [
+        ":rfc1123",
+        "//caching/util/test/proto:test_data_proto_scala_lib",
+        "//caching/util:test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "config_scope",
+    srcs = ["src/ConfigScope.scala"],
+    deps = [
+        "//caching/external/proto:config_scope_specification",
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+        "//wrappers/rpc:rich_scalapb",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "config_scope_test",
+    srcs = ["test/ConfigScopeSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":config_scope",
+        ":server_conf",
+        "//caching/external/proto:config_scope_specification",
+        "//caching/util/test/proto:example_config_override",
+        "//caching/util:test_util",
+        "//wrappers/conf:core",
+        "//wrappers/conf:location",
+        "//wrappers/conf:location_test",
+        "//wrappers/conf:project",
+        "//wrappers/conf:project-conf",
+        "//wrappers/rpc:rich_scalapb",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_typesafe_config",
+    ],
+)
+
+scala_library(
+    name = "pipeline",
+    srcs = ["src/Pipeline.scala"],
+    deps = [
+        ":hybrid_concurrency_domain",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_test(
+    name = "pipeline_test",
+    srcs = ["test/PipelineSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":counting_executors",
+        ":delegating_sequential_execution_context",
+        ":hybrid_concurrency_domain",
+        ":pipeline",
+        ":rich_pipeline",
+        ":sequential_execution_context",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "//wrappers/util:executor",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+scala_library(
+    name = "rich_pipeline",
+    srcs = ["test/RichPipeline.scala"],
+    testonly = True,
+    deps = [":pipeline"],
+)
+
+scala_library(
+    name = "hybrid_concurrency_domain",
+    srcs = ["src/HybridConcurrencyDomain.scala"],
+    deps = [
+        ":context_aware_util",
+        ":lock",
+        ":sequential_execution_context",
+        ":typed_clock",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_test(
+    name = "hybrid_concurrency_domain_test",
+    srcs = ["test/HybridConcurrencyDomainSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":fake_sequential_execution_context",
+        ":fake_typed_clock",
+        ":hybrid_concurrency_domain",
+        ":pipeline",
+        ":sequential_execution_context",
+        ":test_util",
+        ":typed_clock",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+scala_library(
+    name = "watch_cell",
+    srcs = ["src/WatchCell.scala"],
+    deps = [
+        ":sequential_execution_context",
+        "//caching/util:lock",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "watch_cell_test",
+    srcs = ["test/WatchCellSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":cancellable",
+        ":sequential_execution_context",
+        ":test_util",
+        ":watch_cell",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "watch_cell_adapter",
+    srcs = ["src/WatchValueCellPollAdapter.scala"],
+    deps = [
+        ":sequential_execution_context",
+        ":watch_cell",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "watch_cell_adapter_test",
+    srcs = ["test/WatchValueCellPollAdapterSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":sequential_execution_context",
+        ":status_or",
+        ":test_util",
+        ":watch_cell",
+        ":watch_cell_adapter",
+        "//wrappers/logging:sourcecode",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "caching_latency_histogram",
+    srcs = ["src/CachingLatencyHistogram.scala"],
+    deps = [
+        ":pipeline",
+        ":status_utils",
+        ":ticker_time",
+        ":typed_clock",
+        "//wrappers/rpc:error_code",
+        "//wrappers/rpc:error_code_utils",
+        "//wrappers/rpc:rpc_exceptions",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "registry_helper",
+    srcs = ["test/RegistryHelper.scala"],
+    testonly = True,
+    deps = ["@maven//:io_prometheus_simpleclient"],
+)
+
+scala_library(
+    name = "metric_utils",
+    srcs = ["test/MetricUtils.scala"],
+    testonly = True,
+    deps = [
+        ":assert_macros",
+        ":prefix_logger",
+        ":registry_helper",
+        "@io_bazel_rules_scala_scalactic",
+        "@io_bazel_rules_scala_scalatest",
+        "@io_bazel_rules_scala_scalatest_compatible",
+        "@io_bazel_rules_scala_scalatest_core",
+        "@io_bazel_rules_scala_scalatest_funsuite",
+        "@maven//:io_prometheus_simpleclient_common",
+    ],
+)
+
+scala_test(
+    name = "metric_utils_test",
+    srcs = ["test/MetricUtilsSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":metric_utils",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:io_prometheus_simpleclient_common",
+    ],
+)
+
+scala_test(
+    name = "caching_latency_histogram_test",
+    srcs = ["test/CachingLatencyHistogramSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":caching_latency_histogram",
+        ":fake_typed_clock",
+        ":metric_utils",
+        ":pipeline",
+        ":sequential_execution_context",
+        ":test_util",
+        ":typed_clock",
+        "//wrappers/rpc:error_code",
+        "//wrappers/rpc:rpc_exceptions",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "instantiation_tracker",
+    srcs = ["src/InstantiationTracker.scala"],
+    deps = ["@maven//:com_google_code_findbugs_jsr305"],
+)
+
+scala_test(
+    name = "instantiation_tracker_test",
+    srcs = ["test/InstantiationTrackerSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":instantiation_tracker",
+        ":test_util",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_library(
+    name = "build_info",
+    srcs = ["src/BuildInfo.scala"],
+    deps = [":prefix_logger"],
+)
+
+scala_test(
+    name = "build_info_test",
+    srcs = ["test/BuildInfoSuite.scala"],
+    data = ["//caching/util/test/data"],
+    timeout = "short",
+    deps = [
+        ":build_info",
+        ":test_util",
+        "//caching/util/test/proto:test_data_proto_scala_lib",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "lock",
+    srcs = ["src/Lock.scala"],
+)
+
+scala_library(
+    name = "where_am_i_helper",
+    srcs = ["src/WhereAmIHelper.scala"],
+    deps = [
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+    ],
+)
+
+scala_test(
+    name = "where_am_i_helper_test",
+    srcs = ["test/WhereAmIHelperSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":where_am_i_helper",
+        ":where_am_i_test_utils",
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+        "//wrappers/conf:location_test",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:com_typesafe_config",
+    ],
+)
+
+scala_library(
+    name = "where_am_i_test_utils",
+    srcs = ["test/WhereAmITestUtils.scala"],
+    testonly = True,
+    deps = [
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+    ],
+)
+
+scala_library(
+    name = "counting_executors",
+    srcs = ["test/CountingExecutors.scala"],
+    testonly = True,
+    deps = [
+        ":context_aware_util",
+        ":delegating_sequential_execution_context",
+        ":hybrid_concurrency_domain",
+        ":sequential_execution_context",
+        ":typed_clock",
+        "//wrappers/util:executor",
+    ],
+)
+
+scala_library(
+    name = "etcd_test_env",
+    testonly = True,
+    srcs = [
+        "test/EtcdTestEnvironment.scala",
+        "test/EtcdWrapper.scala",
+    ],
+    data = ["@etcd_release//:etcd_binary"],
+    exports = [
+        ":interposing_jetcd_wrapper",
+    ],
+    deps = [
+        ":bytes",
+        ":etcd_client",
+        ":interposing_jetcd_wrapper",
+        "//caching/util:lock",
+        "//caching/util:typed_clock",
+        "//wrappers/util:jsonutil",
+        "//wrappers/logging",
+        "//wrappers/util:executor",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_etcd_jetcd_core",
+        "@scala_proto_rules_grpc_api",
+    ],
+)
+
+
+scala_library(
+    name = "etcd_client",
+    srcs = [
+        "src/EtcdClient.scala",
+        "src/EtcdClientLatencyHistogram.scala",
+        "src/EtcdKeyValueMapper.scala",
+        "src/EtcdWatcher.scala",
+    ],
+    deps = [
+        ":assert_macros",
+        ":bytes",
+        ":caching_latency_histogram",
+        ":pipeline",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":state_machine",
+        ":status_utils",
+        ":ticker_time",
+        ":typed_clock",
+        ":unix_time_version",
+        ":watch_cell",
+        "//wrappers/rpc:client",
+        "//wrappers/rpc:rich_scalapb",
+        "//wrappers/rpc:rpc_tls",
+        "//wrappers/rpc:rpc_tls_jetcd",
+        "@maven//:io_etcd_jetcd_core",
+        "@maven//:io_etcd_jetcd_grpc",
+        "@maven//:io_prometheus_simpleclient",
+        "@maven//:io_prometheus_simpleclient_common",
+        "@maven//:org_scala_lang_modules_scala_java8_compat_2_12",
+    ],
+)
+
+scala_test(
+    name = "etcd_client_latency_histogram_test",
+    srcs = ["test/EtcdClientLatencyHistogramSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":etcd_client",
+        ":fake_typed_clock",
+        ":metric_utils",
+        ":pipeline",
+        ":sequential_execution_context",
+        ":test_util",
+        ":typed_clock",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@maven//:io_prometheus_simpleclient",
+    ],
+)
+
+scala_library(
+    name = "interposing_jetcd_wrapper",
+    srcs = ["test/InterposingJetcdWrapper.scala"],
+    testonly = True,
+    deps = [
+        ":etcd_client",
+        ":lock",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":ticker_time",
+        ":typed_clock",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:io_etcd_jetcd_core",
+        "@maven//:io_etcd_jetcd_grpc",
+        "@maven//:org_scala_lang_modules_scala_java8_compat_2_12",
+    ],
+)
+
+scala_library(
+    name = "etcd_test_utils",
+    srcs = ["test/EtcdTestUtils.scala"],
+    testonly = True,
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_test(
+    name = "etcd_suite",
+    srcs = ["test/EtcdClientSuite.scala"],
+    size = "large",
+    deps = [
+        ":etcd_client",
+        ":etcd_test_env",
+        ":etcd_test_utils",
+        ":fake_sequential_execution_context",
+        ":fake_typed_clock",
+        ":interposing_jetcd_wrapper",
+        ":metric_utils",
+        ":prefix_logger",
+        ":sequential_execution_context",
+        ":state_machine",
+        ":status_or",
+        ":test_state_machine_driver",
+        ":test_util",
+        ":ticker_time",
+        ":typed_clock",
+        ":unix_time_version",
+        ":watch_cell",
+        "//wrappers/logging",
+        "//wrappers/logging:sourcecode",
+        "//wrappers/rpc:rich_scalapb",
+        "//wrappers/rpc:rpc_context",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_etcd_jetcd_core",
+        "@maven//:io_etcd_jetcd_grpc",
+        "@maven//:io_grpc_grpc_api",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)

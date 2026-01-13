@@ -1,0 +1,113 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: TargetTestDataP
+
+valid_target_names: [
+  "a",
+  "0",
+  "aa",
+  "a0",
+  "0a",
+  "softstore-storelet",
+  "has-1-digit-in-the-middle",
+  # This must be the last entry. We assert on its length in TargetSuite.
+  "name-with-63-characters-567890123456789012345678901234567890123"
+]
+
+invalid_target_names: [
+  "-starts-with-dash",
+  "ends-with-dash-",
+  "contains_underscore",
+  "contains-Uppercase-letter",
+  "contains-misc-punctuation!",
+  "contains-unicode-characters-😀",
+  # This must be the last entry. We assert on its length in TargetSuite.
+  "name-with-64-characters-5678901234567890123456789012345678901234"
+]
+
+invalid_uri_test_cases: [
+  {
+    description: "Invalid scheme"
+    cluster_uri: "http://kubernetes-cluster:prod/cloud1/public/region1/clustertype2/01"
+    expected_error_message: "Expected a kubernetes-cluster URI, got: http://kubernetes-cluster:prod/cloud1/public/region1/clustertype2/01"
+  },
+  {
+    description: "Invalid path"
+    cluster_uri: "kubernetes-cluster:prod/cloud1/public/region1/gc"
+    expected_error_message: "Cluster URI path must have 6 parts: parts=[prod, cloud1, public, region1, gc]"
+  }
+]
+
+valid_app_target_names: [
+  "a",
+  "aa",
+  "a0",
+  "softstore-storelet",
+  "has-1-digit-in-the-middle",
+  # This must be the last entry. We assert on its length in AppTargetSuite.
+  "name-with-42-characters-567890123456789012"
+]
+
+invalid_app_target_names: [
+  # Starts with [a-z]
+  "",
+  "0",
+  "12345678"
+  "-starts-with-dash",
+  # Ends with an alphanumeric character
+  "ends-with-dash-",
+  "some-id-.",
+  "some-id-!"
+  # Contains only lowercase alphanumeric characters or '-'
+  "contains_underscore",
+  "contains-Uppercase-letter",
+  "contains-misc!-punctuation",
+  "contains-unicode-characters-😀",
+  "contains-back/slash",
+  "contains.period",
+  "contains:colon",
+  # No two ‘-’ characters may follow one another
+  "has--double-dash",
+  # Contains at most 42 characters
+  # This must be the last entry. We assert on its length in AppTargetSuite.
+  "name-with-43-characters-5678901234567890123"
+]
+
+valid_instance_ids: [
+  "a",
+  "aa",
+  "a0",
+  "a-b",
+  "a0-b1",
+  "abcdefgh",
+  "app-123",
+  "my-instance-1",
+  "prod-mt-oregon-prod",
+  "prod-mt-cloud3-us-east1",
+  # This must be the last entry. We assert on its length in AppTargetSuite.
+  "instance-id-with-63-characters-56789012345678901234567890123456"
+]
+
+invalid_instance_ids: [
+  # Starts with [a-z]
+  "",
+  "0",
+  "12345678"
+  "-starts-with-dash",
+  # Ends with an alphanumeric character
+  "ends-with-dash-",
+  "some-id-.",
+  "some-id-!"
+  # Contains only lowercase alphanumeric characters or '-'
+  "contains_underscore",
+  "contains-Uppercase-letter",
+  "contains-misc!-punctuation",
+  "contains-unicode-characters-😀",
+  "contains-back/slash",
+  "contains.period",
+  "contains:colon",
+  # No two ‘-’ characters may follow one another
+  "has--double-dash",
+  # Contains at most 63 characters
+  # This must be the last entry. We assert on its length in AppTargetSuite.
+  "instance-id-with-64-characters-567890123456789012345678901234567"
+]

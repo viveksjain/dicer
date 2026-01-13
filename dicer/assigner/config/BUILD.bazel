@@ -1,0 +1,218 @@
+load("@rules_scala//scala:scala.bzl", "scala_library", "scala_test")
+
+package(
+    default_visibility = ["//dicer:internal"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+scala_library(
+    name = "internal_target_config",
+    srcs = [
+        "src/ChurnConfig.scala",
+        "src/InternalTargetConfig.scala",
+        "src/TargetName.scala",
+    ],
+    exports = [
+        "//caching/util:config_provider_trait",
+        "//dicer/external/proto",
+    ],
+    visibility = ["//dicer:internal"],
+    deps = [
+        "//caching/util:assert_macros",
+        "//caching/util:config_provider_trait",
+        "//dicer/common/proto:advanced_target_config_scala_lib",
+        "//dicer/common/proto:common_proto_scala_lib",
+        "//dicer/common:assignment_core",
+        "//dicer/common:generation",
+        "//dicer/common:squid",
+        "//dicer/external/proto",
+        "//dicer/external:conf",
+        "//dicer/external:external_common",
+        "//wrappers/logging",
+        "//wrappers/util:jsonutil",
+    ],
+)
+
+scala_library(
+    name = "internal_target_config_map",
+    srcs = ["src/InternalTargetConfigMap.scala"],
+    exports = [":internal_target_config"],
+    visibility = [
+        "//caching/util:__pkg__",
+        "//dicer:internal",
+    ],
+    deps = [
+        ":config_reader",
+        ":internal_target_config",
+        "//caching/util:config_scope",
+        "//dicer/external:conf",
+    ],
+)
+
+scala_library(
+    name = "config_reader",
+    srcs = ["src/TargetConfigReader.scala"],
+    deps = [
+        ":internal_target_config",
+        "//caching/external/proto:config_scope_specification",
+        "//caching/util:config_scope",
+        "//caching/util:prefix_logger",
+        "//dicer/common/proto:advanced_target_config_scala_lib",
+        "//dicer/external/proto",
+        "//dicer/external:conf",
+        "//wrappers/rpc:rich_scalapb",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "config_test_util",
+    srcs = ["test/ConfigTestUtil.scala"],
+    testonly = True,
+    deps = [
+        ":internal_target_config",
+        "//caching/util:metric_utils",
+        "//caching/util:prefix_logger",
+        "//caching/util:test_util",
+        "//dicer/common/proto:advanced_target_config_scala_lib",
+        "//dicer/common:target_helper",
+        "//dicer/external/proto",
+        "//dicer/external:conf",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "@com_google_protobuf_protobuf_java",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_lihaoyi_geny_2_12",
+        "@maven//:com_lihaoyi_os_lib_2_12",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+        "@scala_proto_rules_grpc_netty",
+        "@scala_proto_rules_grpc_stub",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+scala_library(
+    name = "config_provider",
+    srcs = [
+        "src/DicerConfigProvider.scala",
+        "src/InternalTargetConfigMetrics.scala",
+        "src/StaticTargetConfigProvider.scala",
+        "src/TargetConfigProvider.scala",
+    ],
+    deps = [
+        ":config_reader",
+        "//caching/util:assert_macros",
+        "//caching/util:config_provider_trait",
+        "//caching/util:config_scope",
+        "//caching/util:prefix_logger",
+        "//caching/util:safe_config_util",
+        "//caching/util:sequential_execution_context",
+        "//caching/util:server_conf",
+        "//caching/util:watch_cell",
+        "//caching/util:watch_cell_adapter",
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+        "//wrappers/conf:project-conf",
+        "//wrappers/logging",
+        "//dicer/assigner:assigner_conf",
+        "//dicer/assigner/config:internal_target_config",
+        "//dicer/assigner/config:internal_target_config_map",
+        "//dicer/external:conf",
+        "@maven//:io_prometheus_simpleclient",
+        "@scala_proto_rules_grpc_api",
+    ],
+)
+
+scala_test(
+    name = "static_target_config_provider_suite",
+    srcs = [
+        "test/StaticTargetConfigProviderSuite.scala",
+    ],
+    deps = [
+        ":config_provider",
+        ":config_test_util",
+        "//caching/util:sequential_execution_context",
+        "//caching/util:server_conf",
+        "//caching/util:watch_cell",
+        "//wrappers/conf:core",
+        "//wrappers/conf:project-conf",
+        "//wrappers/util:databricks-test",
+        "//dicer/assigner:assigner_conf",
+        "//dicer/assigner/config:internal_target_config_map",
+        "//dicer/assigner:testable_assigner_conf",
+        "//dicer/external:conf",
+        "//dicer/external/proto:proto",
+    ],
+)
+
+
+scala_test(
+    name = "target_config_reader_test",
+    srcs = ["test/TargetConfigReaderSuite.scala"],
+    data = [
+        "//dicer/assigner:advanced_target_config",
+        "//dicer/external/config:target_config",
+    ],
+    timeout = "short",
+    deps = [
+        ":config_reader",
+        ":config_test_util",
+        ":internal_target_config",
+        "//caching/util:config_scope",
+        "//caching/util:prefix_logger",
+        "//caching/util:test_util",
+        "//dicer/external/proto",
+        "//dicer/external:conf",
+        "//wrappers/conf:dbconf",
+        "//wrappers/conf:location",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)
+
+scala_test(
+    name = "internal_target_config_test",
+    srcs = ["test/InternalTargetConfigSuite.scala"],
+    timeout = "short",
+    deps = [
+        ":internal_target_config",
+        "//caching/util:test_util",
+        "//caching/util:unix_time_version",
+        "//dicer/common/proto:advanced_target_config_scala_lib",
+        "//dicer/common/proto:common_proto_scala_lib",
+        "//dicer/common:assignment_core",
+        "//dicer/common:generation",
+        "//dicer/common:squid",
+        "//dicer/common:test_common",
+        "//dicer/external:conf",
+        "//dicer/external:external_common",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+        "//wrappers/util:jsonutil",
+    ],
+)
+
+scala_test(
+    name = "internal_target_config_map_test",
+    srcs = ["test/InternalTargetConfigMapSuite.scala"],
+    data = ["//dicer/external/config:target_config"],
+    timeout = "short",
+    deps = [
+        ":internal_target_config_map",
+        "//caching/util:config_scope",
+        "//dicer/external:conf",
+        "//wrappers/util:async_test_helpers",
+        "//wrappers/util:databricks-test",
+    ],
+)

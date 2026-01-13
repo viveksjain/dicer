@@ -1,0 +1,17 @@
+# SSL/TLS overrides for dicer-assigner Helm chart.
+#
+# This file is used in conjunction with values.yaml when running the demo
+# with SSL/TLS enabled.
+#
+# Usage: helm install dicer-assigner dicer/production/assigner/ \
+#          -f dicer/demo/deploy/helm/dicer-assigner/values.yaml \
+#          -f dicer/demo/deploy/helm/dicer-assigner/values-ssl.yaml
+
+# TLS configuration
+tls:
+  enabled: true
+  secretName: dicer-assigner-tls
+  mountPath: /etc/dicer/certs
+  certFile: cert.pem
+  keyFile: key.pem
+  caFile: ca.pem

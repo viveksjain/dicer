@@ -1,0 +1,31 @@
+# ConfigMap for Dicer Assigner application configuration.
+#
+# This ConfigMap stores the JSON configuration that is mounted into the Assigner pod
+# and consumed via the DB_CONF environment variable.
+#
+# Configuration values:
+# - targetConfigDirectory: Directory containing Dicer target configuration files
+# - advancedTargetConfigDirectory: Directory for advanced target configurations
+# - When tls.enabled=true: Paths to TLS cert, key, and CA files for mTLS
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+data:
+  # Assigner configuration in JSON format (consumed via DB_CONF env var).
+  config.json: |
+    {
+      "databricks.dicer.assigner.targetConfigDirectory": "{{ .Values.config.targetConfigDirectory }}",
+      "databricks.dicer.assigner.advancedTargetConfigDirectory": "{{ .Values.config.advancedTargetConfigDirectory }}"
+      {{- if .Values.tls.enabled }},
+      "databricks.rpc.cert": "{{ .Values.tls.mountPath }}/{{ .Values.tls.certFile }}",
+      "databricks.rpc.key": "{{ .Values.tls.mountPath }}/{{ .Values.tls.keyFile }}",
+      "databricks.rpc.truststore": "{{ .Values.tls.mountPath }}/{{ .Values.tls.caFile }}"
+      {{- end }}
+    }

@@ -1,0 +1,19 @@
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+filegroup(
+    name = "data",
+    srcs = [
+        "build_info_test_data.textproto",
+        "ewma_accumulator_test_data.textproto",
+        "ewma_counter_test_data.textproto",
+        "lossy_ewma_counter_test_data.textproto",
+        "protocol_duration_test_data.textproto",
+        "rfc1123_test_data.textproto",
+    ],
+    visibility = ["//caching/util:internal"],
+)

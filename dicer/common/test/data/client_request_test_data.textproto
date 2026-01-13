@@ -1,0 +1,712 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: ClientRequestTestDataP
+
+invalid_cases: [
+  {
+    case_name: "Missing subscriber data"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      # Missing clerk_data_p or slicelet_data_p
+    }
+    expected_error_message: "One of ClerkDataP or SliceletDataP"
+  },
+
+  {
+    case_name: "Missing target"
+    client_request: {
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "Target must be defined in ClientRequestP"
+  },
+
+  {
+    case_name: "Empty target"
+    client_request: {
+      target: {
+        name: ""
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "Target name must match regex"
+  },
+
+  {
+    case_name: "Invalid target name with slash"
+    client_request: {
+      target: {
+        name: "A/B"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "Target name must match regex"
+  },
+
+  {
+    case_name: "Invalid target name starting with digit"
+    client_request: {
+      target: {
+        name: "0A"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "Target name must match regex"
+  },
+
+  {
+    case_name: "Missing generation"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          # Missing generation
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              # Missing generation
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "assignment must have non-empty generation"
+  },
+
+  {
+    case_name: "Missing subscriber debug name"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      # Missing subscriber_debug_name
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "Subscriber debug name must not be empty"
+  },
+
+  {
+    case_name: "Missing timeout"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      # Missing chosen_rpc_timeout_millis
+      clerk_fields: { }
+    }
+    expected_error_message: "Positive timeout value needed"
+  },
+
+  {
+    case_name: "Negative timeout"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: -2
+      clerk_fields: { }
+    }
+    expected_error_message: "Positive timeout value needed"
+  },
+
+  {
+    case_name: "Too large timeout"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 9223372036854775807 # max int64, too large for Scala
+      clerk_fields: { }
+    }
+    expected_error_message: "Exceeds maximum supported duration"
+  },
+
+  {
+    case_name: "Invalid target cluster"
+    client_request: {
+      target: {
+        name: "softstore"
+        kubernetes_cluster_uri: "not-a-valid-uri"
+      }
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            }
+          ]
+        }
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "URI"
+  },
+  {
+    case_name: "Empty sync assignment state"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      sync_assignment_state: { }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "SyncAssignmentStateP state must not be empty"
+  },
+  {
+    case_name: "Missing sync assignment state"
+    client_request: {
+      target: {
+        name: "softstore"
+      }
+      subscriber_debug_name: "subscriber"
+      chosen_rpc_timeout_millis: 600000
+      clerk_fields: { }
+    }
+    expected_error_message: "SyncAssignmentStateP state must not be empty"
+  }
+]
+
+round_tripping_cases: [
+  # ClerkRequest with assignment
+  {
+    target: {
+      name: "softstore"
+    }
+    sync_assignment_state: {
+      known_assignment: {
+        generation: { incarnation: 10 number: 42 }
+        resources: [
+          {
+            resource_address: "pod0"
+            creation_time_millis: 1680279132000
+            resource_uuid_high: 766285473972240939
+            resource_uuid_low: -6785983130110965961
+          },
+          {
+            resource_address: "pod1"
+            creation_time_millis: 1680289132000
+            resource_uuid_high: -2106651501482782815
+            resource_uuid_low: -6156578963892460947
+          },
+          {
+            resource_address: "pod2"
+            creation_time_millis: 1681289133000
+            resource_uuid_high: 3983016738639005061
+            resource_uuid_low: -6961605952103992816
+          },
+          {
+            resource_address: "pod3"
+            creation_time_millis: 1680112132000
+            resource_uuid_high: -6034688085658549110
+            resource_uuid_low: -6209998268546655401
+          }
+        ]
+        is_consistent: false
+        slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 0
+          },
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 1
+          },
+          {
+            slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 3
+          }
+        ]
+      }
+    }
+    subscriber_debug_name: "subscriber"
+    chosen_rpc_timeout_millis: 600000
+    clerk_fields: { }
+  },
+
+  # ClerkRequest with no assignment  
+  {
+    target: {
+      name: "softstore2"
+    }
+    sync_assignment_state: {
+      known_generation: { incarnation: 34 number: 42 }
+    }
+    subscriber_debug_name: "subscriber2"
+    chosen_rpc_timeout_millis: 600000
+    clerk_fields: { }
+  },
+
+  # Clerk request with cluster-scoped target
+  {
+    target: {
+      name: "softstore"
+      kubernetes_cluster_uri: "kubernetes-cluster:test-env/cloud1/public/region8/clustertype2/01"
+    }
+    sync_assignment_state: {
+      known_assignment: {
+        generation: { incarnation: 10 number: 42 }
+        resources: [
+          {
+            resource_address: "pod0"
+            creation_time_millis: 1680279132000
+            resource_uuid_high: 766285473972240939
+            resource_uuid_low: -6785983130110965961
+          },
+          {
+            resource_address: "pod1"
+            creation_time_millis: 1680289132000
+            resource_uuid_high: -2106651501482782815
+            resource_uuid_low: -6156578963892460947
+          },
+          {
+            resource_address: "pod2"
+            creation_time_millis: 1681289133000
+            resource_uuid_high: 3983016738639005061
+            resource_uuid_low: -6961605952103992816
+          },
+          {
+            resource_address: "pod3"
+            creation_time_millis: 1680112132000
+            resource_uuid_high: -6034688085658549110
+            resource_uuid_low: -6209998268546655401
+          }
+        ]
+        is_consistent: false
+        slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 0
+          },
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 1
+          },
+          {
+            slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 3
+          }
+        ]
+      }
+    }
+    subscriber_debug_name: "subscriber"
+    chosen_rpc_timeout_millis: 600000
+    clerk_fields: { }
+  },
+
+  # Slicelet request
+  {
+    target: {
+      name: "softstore"
+    }
+    sync_assignment_state: {
+      known_assignment: {
+        generation: { incarnation: 10 number: 42 }
+        resources: [
+          {
+            resource_address: "pod0"
+            creation_time_millis: 1680279132000
+            resource_uuid_high: 766285473972240939
+            resource_uuid_low: -6785983130110965961
+          },
+          {
+            resource_address: "pod1"
+            creation_time_millis: 1680289132000
+            resource_uuid_high: -2106651501482782815
+            resource_uuid_low: -6156578963892460947
+          },
+          {
+            resource_address: "pod2"
+            creation_time_millis: 1681289133000
+            resource_uuid_high: 3983016738639005061
+            resource_uuid_low: -6961605952103992816
+          },
+          {
+            resource_address: "pod3"
+            creation_time_millis: 1680112132000
+            resource_uuid_high: -6034688085658549110
+            resource_uuid_low: -6209998268546655401
+          }
+        ]
+        is_consistent: false
+        slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 0
+          },
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 1
+          },
+          {
+            slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 3
+          }
+        ]
+      }
+    }
+    subscriber_debug_name: "subscriber"
+    chosen_rpc_timeout_millis: 600000
+    slicelet_fields: {
+      squid: {
+        resource_address: "SomeURI"
+        creation_time_millis: 1234567890000
+        resource_uuid_high: 123456789
+        resource_uuid_low: 987654321
+      }
+      state: RUNNING
+      kubernetes_namespace: "localhostNamespace"
+    }
+  },
+
+  # Slicelet request with cluster-scoped target
+  {
+    target: {
+      name: "softstore"
+      kubernetes_cluster_uri: "kubernetes-cluster:test-env/cloud1/public/region1/clustertype3/01"
+    }
+    sync_assignment_state: {
+      known_assignment: {
+        generation: { incarnation: 10 number: 42 }
+        resources: [
+          {
+            resource_address: "pod0"
+            creation_time_millis: 1680279132000
+            resource_uuid_high: 766285473972240939
+            resource_uuid_low: -6785983130110965961
+          },
+          {
+            resource_address: "pod1"
+            creation_time_millis: 1680289132000
+            resource_uuid_high: -2106651501482782815
+            resource_uuid_low: -6156578963892460947
+          },
+          {
+            resource_address: "pod2"
+            creation_time_millis: 1681289133000
+            resource_uuid_high: 3983016738639005061
+            resource_uuid_low: -6961605952103992816
+          },
+          {
+            resource_address: "pod3"
+            creation_time_millis: 1680112132000
+            resource_uuid_high: -6034688085658549110
+            resource_uuid_low: -6209998268546655401
+          }
+        ]
+        is_consistent: false
+        slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 0
+          },
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 1
+          },
+          {
+            slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 2
+          },
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 10 number: 42 }
+            resource_indices: 3
+          }
+        ]
+      }
+    }
+    subscriber_debug_name: "subscriber"
+    chosen_rpc_timeout_millis: 600000
+    slicelet_fields: {
+      squid: {
+        resource_address: "SomeURI"
+        creation_time_millis: 1234567890000
+        resource_uuid_high: 123456789
+        resource_uuid_low: 987654321
+      }
+      state: RUNNING
+      kubernetes_namespace: "localhostNamespace"
+    }
+  }
+]

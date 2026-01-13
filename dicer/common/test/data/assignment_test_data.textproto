@@ -1,0 +1,1015 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: AssignmentTestDataP
+
+full_diff_round_trip_test_cases: [
+  # Multiple or single replicas for each Slice, without SubsliceAnnotations.
+  {
+    generation: { incarnation: 23 number: 67 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 23 number: 34 }
+        resources: ["Pod0", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { incarnation: 23 number: 34 }
+        resources: ["Pod0", "Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation: { incarnation: 23 number: 45 }
+        resources: ["Pod1", "Pod0"]
+      },
+      {
+        slice: { low_inclusive: "Nori" high_exclusive: "Thorin" }
+        generation: { incarnation: 23 number: 67 }
+        resources: ["Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Thorin" }
+        generation: { incarnation: 23 number: 34 }
+        resources: ["Pod3"]
+      }
+    ]
+  },
+  # Multiple replicas for each slice, with SubsliceAnnotations.
+  {
+    generation: { incarnation: 23 number: 68 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 23 number: 34 }
+        resources: ["Pod0", "Pod2", "Pod4", "Pod6"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { incarnation: 23 number: 34 }
+        resources: ["Pod1", "Pod3", "Pod5", "Pod7"]
+      },
+      {
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation: { incarnation: 23 number: 45 }
+        resources: ["Pod0", "Pod1", "Pod2", "Pod3"]
+      },
+      {
+        slice: { low_inclusive: "Nori" high_exclusive: "Thorin" }
+        generation: { incarnation: 23 number: 67 }
+        resources: ["Pod4", "Pod5", "Pod6", "Pod7"]
+      },
+      {
+        slice: { low_inclusive: "Thorin" }
+        generation: { incarnation: 23 number: 34 }
+        resources: ["Pod3"]
+        subslice_annotations: [
+          {
+            resource: "Pod3"
+            slice: { low_inclusive: "Thorin" }
+            generation_number: 20
+          }
+        ]
+      }
+    ]
+  },
+  # Large number (100) of replicas for each Slice, with SubsliceAnnotations.
+  {
+    generation: { incarnation: 23 number: 69 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 23 number: 34 }
+        resources: [
+            "Pod0", "Pod1", "Pod2", "Pod3", "Pod4", "Pod5", "Pod6", "Pod7",
+            "Pod8", "Pod9", "Pod10", "Pod11", "Pod12", "Pod13", "Pod14",
+            "Pod15", "Pod16", "Pod17", "Pod18", "Pod19", "Pod20", "Pod21",
+            "Pod22", "Pod23", "Pod24", "Pod25", "Pod26", "Pod27", "Pod28",
+            "Pod29", "Pod30", "Pod31", "Pod32", "Pod33", "Pod34", "Pod35",
+            "Pod36", "Pod37", "Pod38", "Pod39", "Pod40", "Pod41", "Pod42",
+            "Pod43", "Pod44", "Pod45", "Pod46", "Pod47", "Pod48", "Pod49",
+            "Pod50", "Pod51", "Pod52", "Pod53", "Pod54", "Pod55", "Pod56",
+            "Pod57", "Pod58", "Pod59", "Pod60", "Pod61", "Pod62", "Pod63",
+            "Pod64", "Pod65", "Pod66", "Pod67", "Pod68", "Pod69", "Pod70",
+            "Pod71", "Pod72", "Pod73", "Pod74", "Pod75", "Pod76", "Pod77",
+            "Pod78", "Pod79", "Pod80", "Pod81", "Pod82", "Pod83", "Pod84",
+            "Pod85", "Pod86", "Pod87", "Pod88", "Pod89", "Pod90", "Pod91",
+            "Pod92", "Pod93", "Pod94", "Pod95", "Pod96", "Pod97", "Pod98",
+            "Pod99"
+        ]
+        subslice_annotations: [
+          {
+            resource: "Pod0"
+            slice: { low_inclusive: "" high_exclusive: "Balin" }
+            generation_number: 33
+          }
+        ]
+      },
+      {
+        slice: { low_inclusive: "Balin" }
+        generation: { incarnation: 23 number: 55 }
+        resources: [
+            "Pod50", "Pod51", "Pod52", "Pod53", "Pod54", "Pod55", "Pod56",
+            "Pod57", "Pod58", "Pod59", "Pod60", "Pod61", "Pod62", "Pod63",
+            "Pod64", "Pod65", "Pod66", "Pod67", "Pod68", "Pod69", "Pod70",
+            "Pod71", "Pod72", "Pod73", "Pod74", "Pod75", "Pod76", "Pod77",
+            "Pod78", "Pod79", "Pod80", "Pod81", "Pod82", "Pod83", "Pod84",
+            "Pod85", "Pod86", "Pod87", "Pod88", "Pod89", "Pod90", "Pod91",
+            "Pod92", "Pod93", "Pod94", "Pod95", "Pod96", "Pod97", "Pod98",
+            "Pod99", "Pod100", "Pod101", "Pod102", "Pod103", "Pod104", "Pod105",
+            "Pod106", "Pod107", "Pod108", "Pod109", "Pod110", "Pod111",
+            "Pod112", "Pod113", "Pod114", "Pod115", "Pod116", "Pod117",
+            "Pod118", "Pod119", "Pod120", "Pod121", "Pod122", "Pod123",
+            "Pod124", "Pod125", "Pod126", "Pod127", "Pod128", "Pod129",
+            "Pod130", "Pod131", "Pod132", "Pod133", "Pod134", "Pod135",
+            "Pod136", "Pod137", "Pod138", "Pod139", "Pod140", "Pod141",
+            "Pod142", "Pod143", "Pod144", "Pod145", "Pod146", "Pod147",
+            "Pod148", "Pod149"
+        ]
+        subslice_annotations: [
+          {
+            resource: "Pod50"
+            slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+            generation_number: 40
+          },
+          {
+            resource: "Pod50"
+            slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+            generation_number: 33
+          },
+          {
+            resource: "Pod50"
+            slice: { low_inclusive: "Thorin" }
+            generation_number: 35
+          },
+          {
+            resource: "Pod100"
+            slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+            generation_number: 40
+          },
+          {
+            resource: "Pod100"
+            slice: { low_inclusive: "Fili" high_exclusive: "Thorin" }
+            generation_number: 54
+          }
+        ]
+      }
+    ]
+  }
+]
+
+partial_diff_round_trip_test_assignments: [
+  {
+    generation: { incarnation: 2 number: 10 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 2 number: 10 }
+        resources: ["Pod0", "Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { incarnation: 2 number: 10 }
+        resources: ["Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Fili" }
+        generation: { incarnation: 2 number: 10 }
+        resources: ["Pod2", "Pod3"]
+      }
+    ]
+  },
+  {
+    generation: { incarnation: 2 number: 20 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Fili" }
+        generation: { incarnation: 2 number: 20 }
+        resources: ["Pod0", "Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Fili" }
+        generation: { incarnation: 2 number: 10 }
+        resources: ["Pod2", "Pod3"]
+      }
+    ]
+  },
+  {
+    generation: { incarnation: 2 number: 30 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Fili" }
+        generation: { incarnation: 2 number: 25 }
+        resources: ["Pod0"]
+      },
+      {
+        slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+        generation: { incarnation: 2 number: 30 }
+        resources: ["Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Kili" }
+        generation: { incarnation: 2 number: 30 }
+        resources: ["Pod0", "Pod1", "Pod2", "Pod3"]
+      }
+    ]
+  },
+  {
+    generation: { incarnation: 2 number: 40 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" }
+        generation: { incarnation: 2 number: 40 }
+        resources: ["Pod0", "Pod1", "Pod2", "Pod3"]
+      }
+    ]
+  }
+]
+
+from_diff_with_loose_incarnation_data {
+  loose_incarnations: [0, 1, 43, 5124127]
+
+  # The incarnation numbers are populated by the test code to be one of `loose_incarnations`.
+  initial_assignment: {
+    generation: { number: 42 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { number: 42 }
+        resources: ["Pod0", "Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { number: 42 }
+        resources: ["Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Fili" }
+        generation: { number: 42 }
+        resources: ["Pod2", "Pod3"]
+      }
+    ]
+  }
+
+  # The incarnation numbers are populated by the test code to be one of `loose_incarnations`.
+  next_assignment: {
+    generation: { number: 47 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { number: 42 }
+        resources: ["Pod0", "Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation: { number: 42 }
+        resources: ["Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+        generation: { number: 47 }
+        resources: ["Pod0", "Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Kili" }
+        generation: { number: 47 }
+        resources: ["Pod0", "Pod1"]
+      }
+    ]
+  }
+}
+
+from_diff_failure_test_cases: [
+  # Missing known assignment.
+  {
+    diff: {
+      generation { incarnation: 2 number: 30 }
+      partial_diff_generation { incarnation: 2 number: 20 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Fili" }
+          generation { incarnation: 2 number: 20 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation { incarnation: 2 number: 30 }
+          resources: ["Pod2"]
+        },
+        {
+          slice { low_inclusive: "Kili" }
+          generation { incarnation: 2 number: 30 }
+          resources: ["Pod2"]
+        }
+      ]
+    }
+    expected_diff_unused: NO_KNOWN
+  },
+  # Too old known assignment.
+  {
+    known_assignment: {
+      generation { incarnation: 2 number: 10 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" }
+          generation { incarnation: 2 number: 10 }
+          resources: ["Pod0", "Pod2"]
+        }
+      ]
+    }
+    diff: {
+      generation { incarnation: 2 number: 30 }
+      partial_diff_generation { incarnation: 2 number: 20 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Fili" }
+          generation { incarnation: 2 number: 20 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation { incarnation: 2 number: 30 }
+          resources: ["Pod2"]
+        },
+        {
+          slice { low_inclusive: "Kili" }
+          generation { incarnation: 2 number: 30 }
+          resources: ["Pod2"]
+        }
+      ]
+    }
+    expected_diff_unused: TOO_STALE_KNOWN
+  },
+  # Inconsistency: a slice is overwritten by a slice with an earlier slice generation.
+  {
+    known_assignment: {
+      generation { incarnation: 2 number: 42 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Balin" }
+          generation { incarnation: 2 number: 40 }
+          resources: ["Pod0", "Pod1", "Pod2"]
+        },
+        {
+          slice { low_inclusive: "Balin" high_exclusive: "Gandalf" }
+          generation { incarnation: 2 number: 20 }
+          resources: ["Pod1"]
+        },
+        {
+          slice { low_inclusive: "Gandalf" }
+          generation { incarnation: 2 number: 42 }
+          resources: ["Pod2"]
+        }
+      ]
+    }
+    # A diff that is inconsistent with `known_assignment` where ["", "Gandalf") was assigned to a
+    # different resource as of generation 30 (which is less than the slice generation of the first
+    # slice in the known assignment).
+    diff: {
+      generation { incarnation: 2 number: 47 }
+      partial_diff_generation { incarnation: 2 number: 20 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Gandalf" }
+          generation { incarnation: 2 number: 30 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice { low_inclusive: "Gandalf" }
+          generation { incarnation: 2 number: 42 }
+          resources: ["Pod2"]
+        }
+      ]
+    }
+    expected_diff_unused: INCONSISTENCY
+  },
+  # Unsupported consistency mode.
+  {
+    diff: {
+      is_consistent: true
+      generation { incarnation: 2 number: 10 }
+      slice_assignments: [
+        {
+          slice { low_inclusive: "" high_exclusive: "Fili" }
+          generation { incarnation: 2 number: 10 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation { incarnation: 2 number: 10 }
+          resources: ["Pod2"]
+        },
+        {
+          slice { low_inclusive: "Kili" }
+          generation { incarnation: 2 number: 10 }
+          resources: ["Pod2"]
+        }
+      ]
+    }
+    expected_error: "TODO(<internal bug>): Only Affinity is currently supported"
+  }
+]
+
+to_diff_with_higher_diff_generation_test_case: {
+  assignment: {
+    generation: { incarnation: 2 number: 42 }
+    slice_assignments: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation: { incarnation: 2 number: 40 }
+        resources: ["Pod0", "Pod1", "Pod2"]
+      },
+      {
+        slice: { low_inclusive: "Balin" high_exclusive: "Gandalf" }
+        generation: { incarnation: 2 number: 42 }
+        resources: ["Pod1"]
+      },
+      {
+        slice: { low_inclusive: "Gandalf" }
+        generation: { incarnation: 2 number: 42 }
+        resources: ["Pod2"]
+      }
+    ]
+  }
+  diff_generation: { incarnation: 2 number: 43 }
+  expected_error: "Diff generation 2#43 (1970-01-01T00:00:00.043Z) must be less than or equal to assignment generation 2#42 (1970-01-01T00:00:00.042Z)"
+}
+
+is_assigned_key_test_cases: [
+  {
+    assignment: {
+      generation: { incarnation: 2 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod2", "Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 24 }
+          resources: ["Pod0", "Pod2"]
+        },
+        {
+          slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation: { incarnation: 2 number: 45 }
+          resources: ["Pod1"]
+        },
+        {
+          slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation: { incarnation: 2 number: 67 }
+          resources: ["Pod2"]
+        },
+        {
+          slice: { low_inclusive: "Nori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod0", "Pod1", "Pod2", "Pod3"]
+        }
+      ]
+    }
+    calls: [
+      { slice_key: "" resource: "Pod2" expected_result: true },
+      { slice_key: "" resource: "Pod3" expected_result: true },
+      { slice_key: "" resource: "Pod4" expected_result: false },
+      { slice_key: "" resource: "Pod5" expected_result: false },
+      { slice_key: "" resource: "Pod2" resource_salt: "random salt" expected_result: true },
+      { slice_key: "" resource: "Pod3" resource_salt: "random salt" expected_result: true },
+      { slice_key: "Dori" resource: "Pod2" expected_result: true },
+      { slice_key: "Dori" resource: "Pod3" resource_salt: "random salt" expected_result: false },
+      { slice_key: "Fili" resource: "Pod1" expected_result: true },
+      { slice_key: "Fili" resource: "Pod3" expected_result: false },
+      { slice_key: "Kili" resource: "Pod2" expected_result: true },
+      { slice_key: "Kili" resource: "Pod3" resource_salt: "random salt" expected_result: false },
+      { slice_key: "Nori" resource: "Pod2" expected_result: true },
+      { slice_key: "Nori" resource: "Pod3" expected_result: true },
+      { slice_key: "Nori" resource: "Pod3" resource_salt: "random salt" expected_result: true },
+      { slice_key: "Nori" resource: "Pod1" resource_salt: "random salt" expected_result: true }
+    ]
+  },
+  {
+    assignment: {
+      generation: { incarnation: 3 number: 42 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 3 number: 34 }
+          resources: ["Pod1", "Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Dori" }
+          generation: { incarnation: 3 number: 34 }
+          resources: ["Pod0"]
+        }
+      ]
+    }
+    calls: [
+      { slice_key: "" resource: "Pod2" expected_result: false },
+      { slice_key: "" resource: "Pod3" expected_result: true },
+      { slice_key: "" resource: "Pod4" expected_result: false },
+      { slice_key: "" resource: "Pod2" resource_salt: "random salt" expected_result: false },
+      { slice_key: "" resource: "Pod1" resource_salt: "random salt" expected_result: true },
+      { slice_key: "Dori" resource: "Pod2" expected_result: false },
+      { slice_key: "Dori" resource: "Pod0" expected_result: true },
+      { slice_key: "Dori" resource: "Pod0" resource_salt: "random salt" expected_result: true },
+      { slice_key: "Nori" resource: "Pod0" expected_result: true },
+      { slice_key: "Nori" resource: "Pod1" expected_result: false }
+    ]
+  },
+  {
+    assignment: {
+      is_consistent: true
+      generation: { incarnation: 4 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 4 number: 34 }
+          resources: ["Pod2", "Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Kili" }
+          generation: { incarnation: 4 number: 45 }
+          resources: ["Pod1"]
+        },
+        {
+          slice: { low_inclusive: "Kili" }
+          generation: { incarnation: 4 number: 34 }
+          resources: ["Pod0", "Pod1", "Pod2", "Pod3"]
+        }
+      ]
+    }
+    # For Strong consistency mode, resources with the same URI as an assigned resource but with
+    # different UUID/creation time are not considered assigned.
+    calls: [
+      { slice_key: "" resource: "Pod2" expected_result: true },
+      { slice_key: "" resource: "Pod3" expected_result: true },
+      { slice_key: "" resource: "Pod4" expected_result: false },
+      { slice_key: "" resource: "Pod2" resource_salt: "random salt" expected_result: false },
+      { slice_key: "" resource: "Pod3" resource_salt: "random salt" expected_result: false },
+      { slice_key: "Dori" resource: "Pod1" expected_result: true },
+      { slice_key: "Dori" resource: "Pod2" expected_result: false },
+      { slice_key: "Dori" resource: "Pod1" resource_salt: "random salt" expected_result: false },
+      { slice_key: "Fili" resource: "Pod1" expected_result: true },
+      { slice_key: "Fili" resource: "Pod3" expected_result: false },
+      { slice_key: "Kili" resource: "Pod2" expected_result: true },
+      { slice_key: "Kili" resource: "Pod3" resource_salt: "random salt" expected_result: false },
+      { slice_key: "Nori" resource: "Pod2" expected_result: true },
+      { slice_key: "Nori" resource: "Pod3" expected_result: true },
+      { slice_key: "Nori" resource: "Pod3" resource_salt: "random salt" expected_result: false },
+      { slice_key: "Nori" resource: "Pod1" resource_salt: "random salt" expected_result: false }
+    ]
+  }
+]
+
+get_slice_set_for_resource_test_cases: [
+  {
+    assignment: {
+      generation: { incarnation: 2 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod2", "Pod3", "Pod0"]
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 24 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation: { incarnation: 2 number: 45 }
+          resources: ["Pod1"]
+        },
+        {
+          slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation: { incarnation: 2 number: 67 }
+          resources: ["Pod2"]
+        },
+        {
+          slice: { low_inclusive: "Nori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod3", "Pod0"]
+        }
+      ]
+    }
+    calls: [
+      {
+        resource: "Pod0"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Fili" },
+          { low_inclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod1"
+        expected_slices: [
+          { low_inclusive: "Dori" high_exclusive: "Kili" }
+        ]
+      },
+      {
+        resource: "Pod2"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Dori" },
+          { low_inclusive: "Kili" high_exclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod3"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Dori" },
+          { low_inclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod0"
+        resource_salt: "random salt"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Fili" },
+          { low_inclusive: "Nori" }
+        ]
+      }
+    ]
+  },
+  {
+    assignment: {
+      generation: { incarnation: 2 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 24 }
+          resources: ["Pod1", "Pod2"]
+        },
+        {
+          slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation: { incarnation: 2 number: 45 }
+          resources: ["Pod2", "Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation: { incarnation: 2 number: 67 }
+          resources: ["Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Nori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod4"]
+        }
+      ]
+    }
+    calls: [
+      {
+        resource: "Pod0"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Dori" }
+        ]
+      },
+      {
+        resource: "Pod1"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Fili" }
+        ]
+      },
+      {
+        resource: "Pod2"
+        expected_slices: [
+          { low_inclusive: "Dori" high_exclusive: "Kili" }
+        ]
+      },
+      {
+        resource: "Pod3"
+        expected_slices: [
+          { low_inclusive: "Fili" high_exclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod4"
+        expected_slices: [
+          { low_inclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod1"
+        resource_salt: "random salt"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Fili" }
+        ]
+      },
+      {
+        resource: "Pod4"
+        resource_salt: "random salt"
+        expected_slices: [
+          { low_inclusive: "Nori" }
+        ]
+      }
+    ]
+  },
+  {
+    assignment: {
+      is_consistent: true
+      generation: { incarnation: 2 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod0", "Pod1"]
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 24 }
+          resources: ["Pod1", "Pod2"]
+        },
+        {
+          slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation: { incarnation: 2 number: 45 }
+          resources: ["Pod2", "Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation: { incarnation: 2 number: 67 }
+          resources: ["Pod3"]
+        },
+        {
+          slice: { low_inclusive: "Nori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod4"]
+        }
+      ]
+    }
+    # For Strong consistency mode, resources with the same URI as an assigned resource but with
+    # different UUID/creation time are not considered assigned.
+    calls: [
+      {
+        resource: "Pod0"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Dori" }
+        ]
+      },
+      {
+        resource: "Pod1"
+        expected_slices: [
+          { low_inclusive: "" high_exclusive: "Fili" }
+        ]
+      },
+      {
+        resource: "Pod2"
+        expected_slices: [
+          { low_inclusive: "Dori" high_exclusive: "Kili" }
+        ]
+      },
+      {
+        resource: "Pod3"
+        expected_slices: [
+          { low_inclusive: "Fili" high_exclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod4"
+        expected_slices: [
+          { low_inclusive: "Nori" }
+        ]
+      },
+      {
+        resource: "Pod1"
+        resource_salt: "random salt"
+        # No expected slices.
+      },
+      {
+        resource: "Pod4"
+        resource_salt: "random salt"
+        # No expected slices.
+      }
+    ]
+  }
+]
+
+get_assigned_slice_assignments_test_cases: [
+  {
+    assignment: {
+      generation: { incarnation: 2 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod2", "Pod3", "Pod0"]
+          primary_rate_load_opt: 0.0
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 24 }
+          resources: ["Pod0", "Pod1"]
+          primary_rate_load_opt: 1.0
+        },
+        {
+          slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation: { incarnation: 2 number: 45 }
+          resources: ["Pod1"]
+          primary_rate_load_opt: 2.0
+        },
+        {
+          slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation: { incarnation: 2 number: 67 }
+          resources: ["Pod2"]
+          primary_rate_load_opt: 3.0
+        },
+        {
+          slice: { low_inclusive: "Nori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod3", "Pod0"]
+          primary_rate_load_opt: 4.0
+        }
+      ]
+    }
+    calls: [
+      {
+        resource: "Pod0"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod2", "Pod3", "Pod0"]
+            primary_rate_load_opt: 0.0
+          },
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 2 number: 24 }
+            resources: ["Pod0", "Pod1"]
+            primary_rate_load_opt: 1.0
+          },
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod3", "Pod0"]
+            primary_rate_load_opt: 4.0
+          }
+        ]
+      },
+      {
+        resource: "Pod1"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 2 number: 24 }
+            resources: ["Pod0", "Pod1"]
+            primary_rate_load_opt: 1.0
+          },
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 2 number: 45 }
+            resources: ["Pod1"]
+            primary_rate_load_opt: 2.0
+          }
+        ]
+      },
+      {
+        resource: "Pod2"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod2", "Pod3", "Pod0"]
+            primary_rate_load_opt: 0.0
+          },
+          {
+            slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+            generation: { incarnation: 2 number: 67 }
+            resources: ["Pod2"]
+            primary_rate_load_opt: 3.0
+          }
+        ]
+      },
+      {
+        resource: "Pod3"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod2", "Pod3", "Pod0"]
+            primary_rate_load_opt: 0.0
+          },
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod3", "Pod0"]
+            primary_rate_load_opt: 4.0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    # another test case
+    assignment: {
+      generation: { incarnation: 2 number: 67 }
+      slice_assignments: [
+        {
+          slice: { low_inclusive: "" high_exclusive: "Dori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod0", "Pod1"]
+          primary_rate_load_opt: 0.0
+        },
+        {
+          slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+          generation: { incarnation: 2 number: 24 }
+          resources: ["Pod1", "Pod2"]
+          primary_rate_load_opt: 100.0
+        },
+        {
+          slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+          generation: { incarnation: 2 number: 45 }
+          resources: ["Pod2", "Pod3"]
+          primary_rate_load_opt: 200.0
+        },
+        {
+          slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+          generation: { incarnation: 2 number: 67 }
+          resources: ["Pod3"]
+          primary_rate_load_opt: 300.0
+        },
+        {
+          slice: { low_inclusive: "Nori" }
+          generation: { incarnation: 2 number: 34 }
+          resources: ["Pod4"]
+          primary_rate_load_opt: 400.0
+        }
+      ]
+    }
+    calls: [
+      {
+        resource: "Pod0"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod0", "Pod1"]
+            primary_rate_load_opt: 0.0
+          }
+        ]
+      },
+      {
+        resource: "Pod1"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "" high_exclusive: "Dori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod0", "Pod1"]
+            primary_rate_load_opt: 0.0
+          },
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 2 number: 24 }
+            resources: ["Pod1", "Pod2"]
+            primary_rate_load_opt: 100.0
+          }
+        ]
+      },
+      {
+        resource: "Pod2"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "Dori" high_exclusive: "Fili" }
+            generation: { incarnation: 2 number: 24 }
+            resources: ["Pod1", "Pod2"]
+            primary_rate_load_opt: 100.0
+          },
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 2 number: 45 }
+            resources: ["Pod2", "Pod3"]
+            primary_rate_load_opt: 200.0
+          }
+        ]
+      },
+      {
+        resource: "Pod3"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "Fili" high_exclusive: "Kili" }
+            generation: { incarnation: 2 number: 45 }
+            resources: ["Pod2", "Pod3"]
+            primary_rate_load_opt: 200.0
+          },
+          {
+            slice: { low_inclusive: "Kili" high_exclusive: "Nori" }
+            generation: { incarnation: 2 number: 67 }
+            resources: ["Pod3"]
+            primary_rate_load_opt: 300.0
+          }
+        ]
+      },
+      {
+        resource: "Pod4"
+        expected_slice_assignments: [
+          {
+            slice: { low_inclusive: "Nori" }
+            generation: { incarnation: 2 number: 34 }
+            resources: ["Pod4"]
+            primary_rate_load_opt: 400.0
+          }
+        ]
+      }
+    ]
+  }
+]

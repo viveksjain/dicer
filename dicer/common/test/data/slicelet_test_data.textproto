@@ -1,0 +1,21 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceletTestDataP
+
+slicelet_debug_name_test_cases: [
+  {
+    hostname: "first.second.third"
+    expected_debug_name_suffix: "-test-target-first"
+  },
+  {
+    hostname: "localhost"
+    expected_debug_name_suffix: "-test-target-localhost"
+  },
+  {
+    hostname: "12.f.b"
+    expected_debug_name_suffix: "-test-target-12.f.b"
+  },
+  {
+    hostname: "10.10.3.4"
+    expected_debug_name_suffix: "-test-target-10.10.3.4"
+  }
+]

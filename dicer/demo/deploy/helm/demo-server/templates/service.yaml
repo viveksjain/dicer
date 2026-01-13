@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "demo-common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.ports.grpc }}
+    targetPort: {{ .Values.service.ports.grpc }}
+    protocol: TCP
+    name: grpc
+  - port: {{ .Values.service.ports.slicelet }}
+    targetPort: {{ .Values.service.ports.slicelet }}
+    protocol: TCP
+    name: slicelet
+  selector:
+    app: {{ .Values.labels.app }}

@@ -1,0 +1,37 @@
+# Demo values for demo-client Helm chart.
+
+# Image configuration.
+image:
+  repository: demo-client
+  tag: demo
+  pullPolicy: Never
+
+# Replica count.
+replicaCount: 1
+
+# Container port configuration.
+container:
+  ports:
+    - name: info
+      port: 7777
+
+# Location for the client (cluster URI).
+location:
+  kubernetesClusterUri: "kubernetes-cluster:test-env1/cloud-provider1/domain1/region1/cluster-type1/01"
+
+# Slicelet (Demo Server) connection configuration.
+# Uses fully qualified DNS name to reach across namespaces.
+slicelet:
+  host: "demo-server.demo-server.svc.cluster.local"
+
+# Labels for the deployment.
+labels:
+  app: demo-client
+  component: client
+  environment: demo
+  managed-by: helm
+
+# TLS configuration - disabled by default.
+# To enable TLS, use values-ssl.yaml which provides all required TLS settings.
+tls:
+  enabled: false

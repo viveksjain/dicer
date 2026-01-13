@@ -1,0 +1,21 @@
+# proto-file: dicer/external/proto/target.proto
+# proto-message: TargetConfigP
+
+owner_team_name: "demo-team"
+
+default_config {
+  primary_rate_metric_config {
+    # To demonstrate load balancing, we set this somewhat low. The client sends 1000 requests per
+    # second across 2 servers, with each request having load 100, so each server should handle
+    # around 50000 load units per second.
+    #
+    # In a production environment, this should be set based on load testing, see the user guide for
+    # more details.
+    max_load_hint: 50000
+    # To show Dicer reacting to load imbalance in the demo environment, we set the imbalance
+    # tolerance hint to TIGHT. In practice, this should be set based on the application's tolerance
+    # for load imbalance - for most applications we recommend not specifying this (in which case
+    # Dicer will use DEFAULT).
+    imbalance_tolerance_hint: TIGHT
+  }
+}

@@ -1,0 +1,16 @@
+# SSL/TLS overrides for demo-server Helm chart.
+#
+# This file is used in conjunction with values.yaml when running the demo
+# with SSL/TLS enabled.
+#
+# Usage: helm install demo-server dicer/demo/deploy/helm/demo-server/ \
+#          -f dicer/demo/deploy/helm/demo-server/values-ssl.yaml
+
+# TLS configuration
+tls:
+  enabled: true
+  secretName: demo-server-tls
+  mountPath: /etc/demo-server/tls
+  certFile: cert.pem
+  keyFile: key.pem
+  caFile: ca.pem

@@ -1,0 +1,64 @@
+# Demo values for demo-server Helm chart.
+
+# Image configuration.
+image:
+  repository: demo-server
+  tag: demo
+  pullPolicy: Never
+
+# Replica count (2 for demo to demonstrate Dicer load balancing).
+replicaCount: 2
+
+# Service configuration.
+service:
+  type: ClusterIP
+  name: demo-server
+  ports:
+    grpc: 8080
+    slicelet: 24510
+
+# Container port configuration.
+container:
+  ports:
+    - name: grpc
+      port: 8080
+    - name: slicelet
+      port: 24510
+    - name: info
+      port: 7777
+
+# Increase termination grace period to allow for server graceful shutdown.
+terminationGracePeriodSeconds: 60
+
+# Location for the server (cluster URI) - this server runs in the same cluster as the assigner.
+location:
+  kubernetesClusterUri: "kubernetes-cluster:test-env1/cloud-provider1/domain1/region1/cluster-type1/01"
+
+# Dicer Assigner connection configuration.
+assigner:
+  host: "dicer-assigner.dicer-assigner.svc.cluster.local"
+
+# Probes configuration.
+livenessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  tcpSocket:
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+# Labels for the deployment.
+labels:
+  app: demo-server
+  component: server
+  environment: demo
+  managed-by: helm
+
+# TLS configuration - disabled by default.
+# To enable TLS, use values-ssl.yaml which provides all required TLS settings.
+tls:
+  enabled: false

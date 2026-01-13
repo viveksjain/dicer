@@ -1,0 +1,259 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: ClientResponseTestDataP
+
+invalid_cases: [
+  {
+    case_name: "Empty response"
+    # Empty client response
+    expected_error_message: "SyncAssignmentStateP state must not be empty"
+  },
+  {
+    case_name: "Malformed generation in assignment"
+    client_response: {
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: -1 number: 1 }  # Negative incarnation
+        }
+      }
+      suggested_rpc_timeout_millis: 1000
+    }
+    expected_error_message: "Incarnation number must be non-negative"
+  },
+  {
+    case_name: "Malformed generation"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: -1 number: 1 }
+      }
+      suggested_rpc_timeout_millis: 1000
+    }
+    expected_error_message: "Incarnation number must be non-negative"
+  },
+  {
+    case_name: "Malformed assignment (wrong slice order)"
+    client_response: {
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "Bifur" high_exclusive: "Nori" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 0
+            },
+            {
+              slice: { low_inclusive: "" high_exclusive: "Bifur" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 1
+            }
+          ]
+          resources: [
+            {
+              resource_address: "Pod0"
+              resource_uuid_high: 1
+              resource_uuid_low: 2
+              creation_time_millis: 123
+            },
+            {
+              resource_address: "Pod1"
+              resource_uuid_high: 3
+              resource_uuid_low: 4
+              creation_time_millis: 456
+            }
+          ]
+        }
+      }
+    }
+    expected_error_message: "First entry must start at"
+  },
+  {
+    case_name: "Low timeout"
+    client_response: {
+      suggested_rpc_timeout_millis: 500  # Less than 1s
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+    }
+    expected_error_message: "Watch RPC timeout must be at least"
+  },
+  {
+    case_name: "Timeout of zero"
+    client_response: {
+      suggested_rpc_timeout_millis: 0  # Zero timeout
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+    }
+    expected_error_message: "Watch RPC timeout must be at least"
+  },
+  {
+    case_name: "Negative timeout"
+    client_response: {
+      suggested_rpc_timeout_millis: -2  # Negative timeout
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+    }
+    expected_error_message: "timeout"
+  },
+  {
+    case_name: "Too large timeout"
+    client_response: {
+      suggested_rpc_timeout_millis: 9223372036854775807  # i64::MAX
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+    }
+    expected_error_message: "Exceeds maximum supported duration"
+  },
+  {
+    case_name: "Just above maximum timeout"
+    client_response: {
+      suggested_rpc_timeout_millis: 9223372036855  # ceil(i64::MAX / 1_000_000)
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+    }
+    expected_error_message: "Exceeds maximum supported duration"
+  },
+  {
+    case_name: "Minimum representable timeout"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 10 number: 42 }
+      }
+      suggested_rpc_timeout_millis: -9223372036854775808 # i64 min
+    }
+    expected_error_message: "" # timeout out of range
+  },
+  {
+    case_name: "Invalid redirect URI"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+      suggested_rpc_timeout_millis: 1000
+      redirect: {
+        address: "!@#malformed_uri$%^"
+      }
+    }
+    expected_error_message: "" # Invalid URI
+  },
+  {
+    case_name: "Empty sync assignment state"
+    client_response: {
+      sync_assignment_state: { }
+      suggested_rpc_timeout_millis: 1000
+    }
+    expected_error_message: "SyncAssignmentStateP state must not be empty"
+  },
+  {
+    case_name: "Missing sync assignment state"
+    client_response: {
+      suggested_rpc_timeout_millis: 1000
+    }
+    expected_error_message: "SyncAssignmentStateP state must not be empty"
+  }
+]
+
+round_tripping_cases: [
+  {
+    case_name: "Basic response with known generation"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+      suggested_rpc_timeout_millis: 1000
+    }
+  },
+
+  {
+    case_name: "Empty redirect"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+      suggested_rpc_timeout_millis: 1000
+      redirect: { }
+    }
+  },
+
+  {
+    case_name: "Valid redirect"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+      suggested_rpc_timeout_millis: 1000
+      redirect: {
+        address: "http://localhost:1234"
+      }
+    }
+  },
+
+  # Response with assignment
+  {
+    case_name: "Response with assignment"
+    client_response: {
+      sync_assignment_state: {
+        known_assignment: {
+          generation: { incarnation: 10 number: 42 }
+          resources: [
+            {
+              resource_address: "Pod0"
+              creation_time_millis: 1680279132000
+              resource_uuid_high: 766285473972240939
+              resource_uuid_low: -6785983130110965961
+            },
+            {
+              resource_address: "Pod1"
+              creation_time_millis: 1680279133000
+              resource_uuid_high: 766285473972240940
+              resource_uuid_low: -6785983130110965960
+            }
+          ]
+          is_consistent: false
+          slice_assignments: [
+            {
+              slice: { low_inclusive: "" high_exclusive: "Balin" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: 1
+            },
+            {
+              slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: [0, 1]
+            },
+            {
+              slice: { low_inclusive: "Fili" }
+              generation: { incarnation: 10 number: 42 }
+              resource_indices: [0]
+            }
+          ]
+        }
+      }
+      suggested_rpc_timeout_millis: 1000
+    }
+  },
+
+  {
+    case_name: "Response with valid timeout"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+      suggested_rpc_timeout_millis: 1234  # i64::MAX
+    }
+  },
+
+  {
+    case_name: "Response with large timeout (Just below the maximum supported)"
+    client_response: {
+      sync_assignment_state: {
+        known_generation: { incarnation: 123 number: 456 }
+      }
+      suggested_rpc_timeout_millis: 9223372036854  # floor(i64::MAX / 1_000_000)
+    }
+  }
+]
+

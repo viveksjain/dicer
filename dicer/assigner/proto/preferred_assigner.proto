@@ -1,0 +1,98 @@
+syntax = "proto2";
+
+package dicer;
+
+import "dicer/common/proto/common.proto";
+import "scalapb.proto";
+
+option java_package = "com.databricks.api.proto.dicer.assigner";;
+option java_generate_equals_and_hash = true;
+option java_outer_classname = "PreferredAssignerProto";
+option java_multiple_files = true;
+option (scalapb.options) = {
+  package_name: "com.databricks.api.proto.dicer.assigner",
+  flat_package: true,
+};
+
+// Message and service definitions for the Dicer preferred assigner. See
+// <internal link> for information on the design.
+
+// Identifies the information for the preferred assigner, where each of the fields is logically
+// required.
+// Note: If we change this proto, we need to change the corresponding proto in the logs package.
+// [[LoggedAssignerInfoP]] is present in proto/logs/caching/caching_team_log.proto.
+message AssignerInfoP {
+  // Most significant bits of the assigner UUID. Together with `uuid_low`, this must be a valid
+  // UUID. For example, the UUID must not be all zeroes.
+  optional int64 uuid_high = 1;
+
+  // Least significant bits of the assigner UUID.
+  optional int64 uuid_low = 2;
+
+  // The URI of the assigner. Must be a valid URI string.
+  optional string uri = 3;
+}
+
+// Specifies a preferred assigner instance. This message doesn't include the generation because it
+// is designed for persistence in the etcd store which already represents the generation as the
+// version. Use PreferredAssignerValueP to describe the versioned value including a generation.
+message PreferredAssignerSpecP {
+
+  // The preferred assigner value, or empty to indicate preferred assigner mode has been disabled.
+  //
+  // The distinction between "no preferred assigner" and "disabled" is as follows:
+  //
+  // - "No preferred assigner" means that preferred assigner mode is enabled, but there is
+  //   currently no preferred assigner. .
+  //
+  // - "Disabled" means that preferred assigner mode has been disabled entirely.
+  oneof value {
+    // No assigner is preferred, although preferred assigner mode is enabled.
+    PreferredAssignerSpecP.NoneP no_preferred_assigner = 1;
+
+    // The given assigner is preferred.
+    AssignerInfoP assigner_info = 2;
+  }
+
+  // Identifies that there is no preferred assigner. No fields are needed.
+  message NoneP {}
+}
+
+// Identifies a preferred assigner value, including the preferred assigner instance and its
+// associated generation.
+message PreferredAssignerValueP {
+  // The preferred assigner value.
+  optional PreferredAssignerSpecP preferred_assigner = 1;
+
+  // The generation of the preferred assigner.
+  optional GenerationP generation = 2;
+}
+
+// A heartbeat from a standby assigner to the (presumed) preferred assigner. This is used to check
+// on the health of the preferred assigner and, optionally, to update the knowledge of the current
+// preferred assigner if the sender's knowledge is out of date.
+message HeartbeatRequestP {
+  option (scalapb.message).extends = "com.databricks.rpc.RPC[HeartbeatResponseP]";
+
+  // An identifier for the heartbeat. Used by the sender to associate responses with requests.
+  optional int64 op_id = 1;
+
+  // The most recent versioned preferred assigner value known to the sender.
+  optional PreferredAssignerValueP preferred_assigner_value = 2;
+}
+
+message HeartbeatResponseP {
+  // The op_id of the request for which this response is being sent.
+  optional int64 op_id = 1;
+
+  // Optional: The most recent versioned preferred assigner value known to the recipient.
+  // The sender can use this knowledge to decide how to direct its future requests.
+  optional PreferredAssignerValueP preferred_assigner_value = 2;
+}
+
+// The service used by standby assigners to heartbeat against the preferred assigner to monitor
+// its health and learn of changes to the preferred assigner.
+service PreferredAssignerService {
+  // The heartbeat from a standby assigner to the preferred assigner.
+  rpc Heartbeat(HeartbeatRequestP) returns (HeartbeatResponseP) {}
+}

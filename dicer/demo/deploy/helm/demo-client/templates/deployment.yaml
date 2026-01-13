@@ -1,0 +1,45 @@
+# Deployment for demo-client application.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.labels.app }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "demo-common.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      labels:
+        {{- include "demo-common.podLabels" . | nindent 8 }}
+    spec:
+      {{- include "demo-common.tls.volumeIfEnabled" . | nindent 6 }}
+      containers:
+      - name: {{ .Values.labels.app }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- include "demo-common.tls.volumeMountIfEnabled" . | nindent 8 }}
+        ports:
+        {{- include "demo-common.containerPorts" . | nindent 8 }}
+        env:
+        # Environment variables needed to configure the Clerk.
+        - name: LOCATION
+          value: '{"kubernetes_cluster_uri": "{{ .Values.location.kubernetesClusterUri }}"}'
+        # Hostname of the Slicelet service (Demo Server).
+        # Uses fully qualified DNS name to reach across namespaces.
+        - name: SLICELET_HOST
+          value: "{{ .Values.slicelet.host }}"
+        # Load configuration from ConfigMap.
+        - name: DB_CONF
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.labels.app }}-config
+              key: config.json
+        {{- if .Values.resources }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- end }}

@@ -1,0 +1,58 @@
+load("@rules_scala//scala:scala.bzl", "scala_library")
+
+package(
+    default_visibility = ["//dicer:internal"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+scala_library(
+    name = "slicelet_accessor",
+    srcs = ["src/SliceletAccessor.scala"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":state_transfer_common",
+        "//dicer/client:slicelet_impl",
+        "//dicer/common:squid",
+        "//dicer/external:slicelet",
+    ],
+)
+
+scala_library(
+    name = "shutdown_hook_constants",
+    srcs = ["src/ShutdownHookConstants.scala"],
+    visibility = ["//visibility:public"],
+    deps = ["//wrappers/util:shutdown-hook-manager"],
+)
+
+scala_library(
+    name = "state_transfer_common",
+    srcs = ["src/SliceWithStateProvider.scala"],
+    visibility = ["//visibility:public"],
+    deps = ["//dicer/external:external_common"],
+)
+
+scala_library(
+    name = "slice_map",
+    srcs = ["src/SliceMap.scala"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//caching/util:assert_macros",
+        "//dicer/common:slice_helper",
+        "//dicer/external:external_common",
+    ],
+)
+
+scala_library(
+    name = "mutable_slice_map",
+    srcs = ["src/MutableSliceMap.scala"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dicer/external:external_common",
+        "@maven//:com_google_guava_guava",
+    ],
+)

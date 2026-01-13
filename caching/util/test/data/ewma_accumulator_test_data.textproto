@@ -1,0 +1,120 @@
+# proto-file: caching/util/test/proto/test_data.proto
+# proto-message: EwmaAccumulatorTestDataP
+
+invalid_cases: [
+  # Invalid factory parameters: alpha not in (0.0, 1.0).
+  { ewma_accumulator: { alpha: -0.1 } }, # Negative alpha value
+  { ewma_accumulator: { alpha: 0.0 } }, # Zero alpha value
+  { ewma_accumulator: { alpha: 1.0 } }, # Alpha value greater than or equal to 1
+  { ewma_accumulator: { alpha: 2.0 } }, # Alpha value greater than 1
+  { ewma_accumulator: { alpha: 1.0 seed_opt: 1.0 } }, # Alpha >= 1.0 and with seed.
+  { ewma_accumulator: { alpha: 0 seed_opt: 1.0 } }, # Zero alpha value with seed
+  # Invalid append zeros actions: negative count.
+  {
+    ewma_accumulator: { alpha: 0.6 }
+    actions: [ { append_zeros: -1 } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.3 }
+    actions: [ { append_zeros: 0 } ]
+  }
+]
+
+valid_cases: [
+  # Valid factory parameters.
+  { ewma_accumulator: { alpha: 0.4 } }, # valid alpha value, no seed
+  { ewma_accumulator: { alpha: 0.6 seed_opt: 10.0 } }, # valid alpha value with seed
+  { ewma_accumulator: { alpha: 0.6 seed_opt: 10000000.0 } }, # valid alpha value with a large seed
+
+  # A general case with no seed.
+  {
+    ewma_accumulator: { alpha: 0.5 }
+    actions: [
+      { assert_value_equals: { expected: 0.0 debug_message_opt: "initial value" } },
+      { append_value: 0 },
+      { assert_value_equals: { expected: 0.0 debug_message_opt: "xs = {0}" } },
+      { append_value: 1 },
+      {
+        assert_value_equals: {
+          expected: 0.6666666667
+          debug_message_opt: "xs = {0, 1}, weightedSum = 1/2, totalWeight = 1/2 + 1"
+        }
+      },
+      { append_value: 2 },
+      {
+        assert_value_equals: {
+          expected: 1.4285714286
+          debug_message_opt: "xs = {0, 1, 2}, weightedSum = 1/2 + 2, totalWeight = 1/4 + 1/2 + 1"
+        }
+      },
+      { append_value: 3 },
+      {
+        assert_value_equals: {
+          expected: 2.2666666667
+          debug_message_opt:
+              "xs = {0, 1, 2, 3}, weightedSum = 1/4 + 2/2 + 3, totalWeight = 1/8 + 1/4 + 1/2 + 1"
+        }
+      }
+    ]
+  },
+
+  # A general case where seed is defined.
+  {
+    ewma_accumulator: { alpha: 0.25 seed_opt: 10.0 }
+    actions: [
+      { assert_value_equals: { expected: 10.0 debug_message_opt: "initial value with seed" } },
+      { append_value: 4 },
+      { assert_value_equals: { expected: 8.5 debug_message_opt: "0.75 * 10 + 0.25 * 4" } },
+      { append_value: 8 },
+      { assert_value_equals: { expected: 8.375 debug_message_opt: "0.75 * 8.5 + 0.25 * 8" } }
+    ]
+  },
+
+  # Stability cases with repeated appends.
+  {
+    ewma_accumulator: { alpha: 0.5 }
+    actions: [ { repeated_append_with_check: { value: 1 count: 1000000 expected_opt: 1.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.2 }
+    actions: [ { repeated_append_with_check: { value: 1 count: 1000000 expected_opt: 1.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.1 }
+    actions: [ { repeated_append_with_check: { value: 1 count: 1000000 expected_opt: 1.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.01 }
+    actions: [ { repeated_append_with_check: { value: 1 count: 1000000 expected_opt: 1.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.5 }
+    actions: [ { repeated_append_with_check: { value: 64 count: 1000000 expected_opt: 64.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.2 }
+    actions: [ { repeated_append_with_check: { value: 64 count: 1000000 expected_opt: 64.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.1 }
+    actions: [ { repeated_append_with_check: { value: 64 count: 1000000 expected_opt: 64.0 } } ]
+  },
+  {
+    ewma_accumulator: { alpha: 0.01 }
+    actions: [ { repeated_append_with_check: { value: 64 count: 1000000 expected_opt: 64.0 } } ]
+  }
+]
+
+append_zeros_and_compare: {
+  ewma_accumulator: { alpha: 0.4 }
+  actions: [
+    { append_value: 1000 },
+    { append_zeros: 30 }
+  ]
+  reference_ewma_accumulator: { alpha: 0.4 }
+  reference_accumulator_actions: [
+    { append_value: 1000 },
+    { repeated_append_with_check: { value: 0 count: 30 } },
+    { assert_accumulators_value_match: {} }
+  ]
+}

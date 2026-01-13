@@ -1,0 +1,19 @@
+package com.databricks.dicer.assigner
+
+import com.databricks.caching.util.TestUtils.assertThrow
+import com.databricks.conf.Configs
+import com.databricks.dicer.assigner.conf.DicerAssignerConf
+import com.databricks.testing.DatabricksTest
+
+/** Test suite for AssignerMain which is run in a configuration where POD_UID is not set. */
+class AssignerMainNoPodUidThrowsSuite extends DatabricksTest {
+  test("Assigner requires POD_UID environment variable to start") {
+    // Test plan: Verify that the Assigner checks that POD_UID is set before starting, otherwise
+    // throws an exception.
+    assertThrow[IllegalStateException]("Environment variable POD_UID is not set.") {
+      AssignerMain.staticForTest.wrappedMainInternal(
+        new DicerAssignerConf(Configs.empty)
+      )
+    }
+  }
+}

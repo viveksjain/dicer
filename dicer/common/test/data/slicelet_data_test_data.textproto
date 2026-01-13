@@ -1,0 +1,111 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceletDataTestDataP
+
+round_tripping_cases: [
+  # Case 1: No attributed_loads nor unattributed_load
+  {
+    squid: {
+      resource_address: "test-uri-1"
+      creation_time_millis: 1234567890000
+      resource_uuid_high: 123456789
+      resource_uuid_low: 987654321
+    }
+    state: RUNNING
+    kubernetes_namespace: "test-namespace-1"
+  },
+
+  # Case 2: Has attributed_loads but no unattributed_load
+  {
+    squid: {
+      resource_address: "test-uri-2"
+      creation_time_millis: 1234567890001
+      resource_uuid_high: 123456790
+      resource_uuid_low: 987654322
+    }
+    state: RUNNING
+    kubernetes_namespace: "test-namespace-2"
+    attributed_loads: [
+      {
+        primary_rate_load: 100.5
+        window_low_inclusive_seconds: 1609459200
+        window_high_exclusive_seconds: 1609459260
+        slice: {
+          low_inclusive: "apple"
+          high_exclusive: "banana"
+        }
+        num_replicas: 2
+      }
+    ]
+  },
+
+  # Case 3: Has unattributed_load but no attributed_loads
+  {
+    squid: {
+      resource_address: "test-uri-3"
+      creation_time_millis: 1234567890002
+      resource_uuid_high: 123456791
+      resource_uuid_low: 987654323
+    }
+    state: TERMINATING
+    kubernetes_namespace: "test-namespace-3"
+    unattributed_load: {
+      primary_rate_load: 50.25
+      window_low_inclusive_seconds: 1609459200
+      window_high_exclusive_seconds: 1609459260
+      slice: {
+        low_inclusive: ""
+        high_exclusive: "zzz"
+      }
+      num_replicas: 1
+    }
+  },
+
+  # Case 4: Has both attributed_loads and unattributed_load
+  {
+    squid: {
+      resource_address: "test-uri-4"
+      creation_time_millis: 1234567890003
+      resource_uuid_high: 123456792
+      resource_uuid_low: 987654324
+    }
+    state: RUNNING
+    kubernetes_namespace: "test-namespace-4"
+    attributed_loads: [
+      {
+        primary_rate_load: 75.0
+        window_low_inclusive_seconds: 1609459200
+        window_high_exclusive_seconds: 1609459260
+        slice: {
+          low_inclusive: "cat"
+          high_exclusive: "dog"
+        }
+        top_keys: [
+          {
+            slice_key: "cat1"
+            underestimated_primary_rate_load: 25.0
+          }
+        ]
+        num_replicas: 3
+      },
+      {
+        primary_rate_load: 25.0
+        window_low_inclusive_seconds: 1609459200
+        window_high_exclusive_seconds: 1609459260
+        slice: {
+          low_inclusive: "elephant"
+          high_exclusive: "fox"
+        }
+        num_replicas: 1
+      }
+    ]
+    unattributed_load: {
+      primary_rate_load: 15.75
+      window_low_inclusive_seconds: 1609459200
+      window_high_exclusive_seconds: 1609459260
+      slice: {
+        low_inclusive: "" # high_exclusive is not set, meaning infinity
+      }
+      num_replicas: 1
+    }
+  }
+]

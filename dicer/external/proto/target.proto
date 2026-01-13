@@ -1,0 +1,228 @@
+syntax = "proto2";
+
+package dicer;
+
+import "caching/external/proto/config_scope_specification.proto";
+
+import "scalapb.proto";
+
+option java_package = "com.databricks.api.proto.dicer.external";;
+option java_generate_equals_and_hash = true;
+option java_outer_classname = "TargetProto";
+option java_multiple_files = true;
+option (scalapb.options) = {
+  package_name: "com.databricks.api.proto.dicer.external",
+  flat_package: true
+};
+
+// A configuration that must be defined for external customers to use Dicer. Configurations should
+// be defined in dicer/external/config.
+message TargetConfigP {
+  // REQUIRED: the name of the team owning the target of this config. Must match one of the names
+  // defined in eng-team-info.json. Used to notify the team of incidents related to the target (e.g.
+  // due to misconfiguration).
+  optional string owner_team_name = 5;
+
+  // REQUIRED: the default configuration to use in k8s clusters where no override is defined in
+  // `overrides`.
+  optional TargetConfigFieldsP default_config = 3;
+
+  // Overrides for specific k8s clusters. A `databricks.caching.ConfigScopeP` override may be
+  // referenced at most once in this collection.
+  repeated TargetConfigOverrideP overrides = 4;
+
+  // `optional string target_name`: target name is now inferred from the file name containing the
+  // config.
+  reserved 1;
+
+  // `optional LoadBalancingMetricConfigP primary_rate_metric_config`: moved under `default_config`
+  // to support overrides.
+  reserved 2;
+}
+
+// Contents of a Dicer target configuration. This message is used to represent both the default
+// configuration and overrides to apply in specific k8s clusters.
+message TargetConfigFieldsP {
+  // REQUIRED: Load balancing configuration for the primary rate metric.
+  optional LoadBalancingMetricConfigP primary_rate_metric_config = 1;
+
+  // OPTIONAL: If unset, defaults to single replica (min_replicas == max_replicas == 1).
+  optional KeyReplicationConfigP key_replication_config = 2;
+}
+
+// Override of a Dicer target configuration that applies to specific k8s clusters.
+message TargetConfigOverrideP {
+  // k8s clusters to which this override applies. A specific config scope may be referenced at most
+  // once in the parent `TargetConfigP.overrides` collection.
+  repeated databricks.caching.ConfigScopeP override_scopes = 1;
+
+  // The overriding configuration. This override is merged into the parent
+  // `TargetConfigP.default_config` using protobuf `mergeFrom` semantics, which are described at
+  // https://protobuf.dev/reference/java/api-docs/com/google/protobuf/MessageLite.Builder.html
+  //
+  // WARNING: protobuf `mergeFrom` is NOT the same as Jsonnet's `std.mergePatch`:
+  //  - Singular fields are overridden when defined, as in Jsonnet.
+  //  - Repeated fields are concatenated, in contrast with Jsonnet which replaces the entire array.
+  optional TargetConfigFieldsP override_config = 2;
+}
+
+// Configures load balancing for a specific metric. Dicer is agnostic about load units (they may
+// represent queries per second, bytes per second, etc.) but requires the application to provide
+// hints about the scale of load measurements (`max_load_hint`). Applications may optionally
+// override their default load imbalance tolerance for this metric (`imbalance_tolerance`) if they
+// are particular sensitive to load imbalance or if they are willing to tolerate more imbalance in
+// exchange for less key movement when Dicer assignments are updated.
+message LoadBalancingMetricConfigP {
+
+  // REQUIRED: The maximum load that a resource (pod) can handle. This hint allows Dicer to
+  // understand the scale of load measurements (is 10 units of load a lot?)
+  //
+  // This parameter is a "hint" because Dicer is not always in a position to prevent load assigned
+  // to a resource from exceeding this value. For example, if the total load offered to a sharded
+  // service with 5 pods is 1000 QPS, and the max load hint is 100 QPS, the average pod will be
+  // overloaded with 200 QPS, whatever assignment Dicer generates.
+  optional double max_load_hint = 1;
+
+  // Enumeration of imbalance tolerance configurations supported by Dicer. "Tighter" tolerances
+  // result in better load balancing, but also result in more frequent key movement as Dicer fine-
+  // tunes assignments. We recommend that applications start with the `DEFAULT` tolerance and switch
+  // to `TIGHT` or `LOOSE` if supported empirically. For example, if an application has extremely
+  // high utilization, and key movement is not expensive for that application, switching to `TIGHT`
+  // may result in better load balancing and cooler pods. Conversely, if key movement is causing
+  // disruptions for an application and the application has low utilization, switching to `LOOSE`
+  // may result in more stable assignments.
+  //
+  // Dicer uses `max_load_hint` to understand the scale of load measurements, and also the scale of
+  // any observed load imbalance. For example, if the average pod is handling 500 QPS, the most
+  // heavily loaded pod is handling 600 QPS, and the max load hint is 1000 requests per second, the
+  // imbalance ratio is 10% (or (600 QPS - 500 QPS) / 1000 QPS), which is the threshold for
+  // "significant imbalance" when using the `DEFAULT` tolerance configuration.
+  //
+  // The exact thresholds for the `DEFAULT`, `TIGHT`, and `LOOSE` configurations are not fixed, and
+  // may be adjusted in the future based on general observations of load imbalance and key movement
+  // costs in production.
+  //
+  // These configurations are "hints" because Dicer cannot always ensure that load imbalance stays
+  // within the specified bounds:
+  //
+  //  - If an individual key has sufficient load, the resource to which it is assigned could be
+  //    overloaded even if it assigned no other keys. For example, a key might on its own account
+  //    for 50% of the total load on a service, so if that key is assigned to one pod in a 4-pod
+  //    deployment, that pod will need to handle twice the average load.
+  //  - Dicer assignments necessarily reflect past load, so if load is changing rapidly, an
+  //    assignment may not be optimal for the current load distribution. If load changes are
+  //    persistent, Dicer assignments will eventually converge, but it is important to avoid
+  //    overreactions and key movement due to changes in load that may be transient.
+  enum ImbalanceToleranceHintP {
+
+
+    // The default setting which is appropriate for most applications. Load balancing will be
+    // performed when the absolute value of the imbalance ratio for any resource exceeds ~10%.
+    DEFAULT = 0;
+
+    // For applications that are very sensitive to load imbalance and can tolerate regular key
+    // movement. Load balancing will be performed when the absolute value of the imbalance ratio for
+    // any resource exceeds ~2.5%.
+    TIGHT = 1;
+
+    // For applications with significant spare capacity but for which key movement is expensive/
+    // disruptive. Load balancing will be performed when the absolute value of the imbalance ratio
+    // for any resource exceeds ~40%.
+    LOOSE = 2;
+  }
+
+  // Enumeration of load reservation configurations supported by Dicer. A load reservation indicates
+  // to Dicer that it should reserve server capacity for future load, i.e. load above and beyond
+  // actual (recently measured) load. For example, with a `SMALL_RESERVATION`, Dicer will assume
+  // that each pod may potentially be subject to additional load amounting to 5% of `max_load_hint`.
+  //
+  // When using `uniform_load_reservation_hint`, Dicer will assume that the reserved load is
+  // uniformly distributed in the hashed key space. This corresponds to a workload in which
+  // SliceKeys are generated using a high-quality hash and there isn't much load variation (due to
+  // hot keys for example) in the key space. Since uniform load is the only supported reservation
+  // policy at present, we will assume that policy in our discussion below.
+  //
+  // Consider the following sample configuration:
+  //
+  //    max_load_hint = 1000                                  # load unit is QPS
+  //    uniform_load_reservation_hint = MEDIUM_RESERVATION    # "medium" is 20% of max_load_hint
+  //
+  // Dicer will assume that the service may potentially be subject to additional load amounting to
+  // 20% of the total max load of the service (i.e. `max_load_hint` times the number of pods).
+  // Assuming that the service in our example has 10 pods, Dicer will account for 2000 QPS
+  // (1000 QPS/pod * 10 pods * 20%) of reserved load by adding it to the existing measured load
+  // reported to Dicer by the service (assuming that every 64-bit key hash has the same
+  // potential reservation).
+  //
+  // By default, sharded services are configured with `NO_RESERVATION`, which means that Dicer will
+  // base its load balancing decisions on measured load plus a negligible 1% reservation. This is
+  // the recommended configuration, as in most services recent load is the best predictor of load in
+  // the near future.
+  //
+  // Other reservations may be configured when reserved load is known to be uniformly distributed
+  // in the key space, and when future load is not predicted by past load. In such cases we
+  // recommend starting with `MEDIUM_RESERVATION` and adjusting as needed. There are tradeoffs to
+  // consider though:
+  //
+  //  - The larger the reservation, the less able Dicer will be to react to actual, significant load
+  //    imbalance. For example, when using `LARGE_RESERVATION`, Dicer needs to load balance while
+  //    accounting not only for the actual measured load, but also for reserved load amounting to
+  //    40% of the maximum load for the service (`max_load_hint` times the number of pods). This is
+  //    not a viable strategy when the service is heavily utilized.
+  //  - If the reserved load is not truly uniformly distributed, a larger reservation is
+  //    unfortunately necessary. For example, if there are unpredictable and transiently hot keys,
+  //    more spare capacity is needed to handle one or more such keys on each pod. Assuming that
+  //    load is consistent over time, it is best to allow Dicer's default load balancing behavior to
+  //    handle hot keys, without limiting its load balancing flexibility by using a reservation.
+  //
+  // In general, make sure that your service is sufficiently over-provisioned when using
+  // reservations. The larger the reservation, the more over-provisioned the service needs to be.
+  // Representative load tests are needed to appropriately tune the reservation configuration.
+  enum ReservationHintP {
+
+
+    // Default, recommended configuration. A negligible reservation amounting to 1% of
+    // `max_load_hint` per pod is used, purely to ensure that for sparsely loaded services (as is
+    // typical during ramp-up of Dicer), Dicer has some means of distributing reserved load amongst
+    // pods. See go/<internal bug> for instance, in which the lack of reported load meant that Dicer
+    // assigned all Slices to 1 of 17 pods.
+    // TODO(<internal bug>) rename MINIMAL_RESERVATION
+    NO_RESERVATION = 0;
+
+    // A "small" reservation amounting to 10% of `max_load_hint` per pod.
+    SMALL_RESERVATION = 1;
+
+    // A "medium" reservation amounting to 20% of `max_load_hint` per pod.
+    MEDIUM_RESERVATION = 2;
+
+    // A "large" reservation amount to 40% of `max_load_hint` per pod.
+    LARGE_RESERVATION = 3;
+  }
+
+  // OPTIONAL: The tolerance for load imbalance in this metric. See `ImbalanceToleranceP` for
+  // details.
+  optional ImbalanceToleranceHintP imbalance_tolerance_hint = 2;
+
+  // OPTIONAL: The capacity to reserve for load that is uniformly distributed in the key space. See
+  // `ReservationHintP` for details.
+  optional ReservationHintP uniform_load_reservation_hint = 3;
+}
+
+// Configuration for dicer asymmetric key replication.
+message KeyReplicationConfigP {
+
+  // The (inclusive) minimum number of replicas (i.e. number of assigned resources) that a Slice
+  // will have in newly generated assignments from this KeyReplicationConfig. The minimum number of
+  // replicas will be satisfied whenever possible. However if the number of total available
+  // resources themselves is less than `min_replicas`, each Slice will have, and can only have, less
+  // than `min_replicas` replicas.
+  optional int32 min_replicas = 1;
+
+  // The (inclusive) maximum number of replicas (i.e. number of assigned resources) that a Slice
+  // will have in newly generated assignments from this KeyReplicationConfig. Dicer might replicate
+  // a hot Slice (i.e. a Slice with reported load that cannot be served by a single pod) more than
+  // `min_replicas` to better balance load, but it is always guaranteed that each Slice will have no
+  // more than `max_replicas` replicas.
+  // TODO(<internal bug>): Support unlimited max number of replicas.
+  optional int32 max_replicas = 2;
+}

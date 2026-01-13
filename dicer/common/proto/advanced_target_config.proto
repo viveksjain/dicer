@@ -1,0 +1,118 @@
+syntax = "proto2";
+
+package dicer;
+
+import "caching/external/proto/config_scope_specification.proto";
+import "dicer/external/proto/target.proto";
+import "scalapb.proto";
+
+option java_package = "com.databricks.api.proto.dicer.common";;
+option java_generate_equals_and_hash = true;
+option java_outer_classname = "AdvancedTargetConfigProto";
+option java_multiple_files = true;
+option (scalapb.options) = {
+  package_name: "com.databricks.api.proto.dicer.common",
+  flat_package: true,
+};
+
+// Advanced configuration parameters for a Dicer target.
+message AdvancedTargetConfigP {
+
+  // OPTIONAL: the default configuration to use in k8s clusters where no override is defined in
+  // `overrides`. All advanced configurations are optional, so no default needs to be specified if
+  // nothing is being overridden.
+  optional AdvancedTargetConfigFieldsP default_config = 1;
+
+  // Overrides for specific k8s clusters. A `databricks.caching.ConfigScopeP` override may be
+  // referenced at most once in this collection.
+  repeated AdvancedTargetConfigOverrideP overrides = 2;
+}
+
+// Contents of a Dicer advanced target configuration. This message is used to represent both the
+// default configuration and overrides to apply in specific clusters.
+message AdvancedTargetConfigFieldsP {
+
+  // OPTIONAL: configures the load watcher which is responsible for collecting load measurements
+  // supplied by Slicelets to the Dicer backend.
+  optional LoadWatcherConfigP load_watcher_config = 1;
+
+  // RESERVED: reserved for the removed StateTransferConfigP field.
+  reserved 2;
+
+  // DEPRECATED: Use dicer.external.TargetConfigFieldsP.key_replication_config instead.
+  // The key_replication_config in external config always overrides this field. If
+  // key_replication_config is empty in external config, this field can still take effect.
+  // TODO(<internal bug>): Remove this field from this file, and also from the static and dynamic
+  //                  configuration files.
+  optional KeyReplicationConfigP key_replication_config = 3 [deprecated = true];
+
+  // OPTIONAL: configures the health watcher's behavior on startup. When not set, the health
+  // watcher defaults to setting Slicelets to the RUNNING state after a timeout.
+  optional HealthWatcherConfigP health_watcher_config = 4;
+}
+
+// Override of a Dicer advanced target configuration that applies to specific clusters.
+message AdvancedTargetConfigOverrideP {
+  // k8s clusters to which this override applies. A specific config scope may be referenced at most
+  // once in the parent `AdvancedTargetConfigP.overrides` collection.
+  repeated databricks.caching.ConfigScopeP override_scopes = 1;
+
+  // The overriding configuration. This override is merged into the parent
+  // `AdvancedTargetConfigP.default_config` using protobuf `mergeFrom` semantics, which are
+  // described at
+  // https://protobuf.dev/reference/java/api-docs/com/google/protobuf/MessageLite.Builder.html
+  //
+  // WARNING: protobuf `mergeFrom` is NOT the same as Jsonnet's `std.mergePatch`:
+  //  - Singular fields are overridden when defined, as in Jsonnet.
+  //  - Repeated fields are concatenated, in contrast with Jsonnet which replaces the entire array.
+  optional AdvancedTargetConfigFieldsP override_config = 2;
+}
+
+// Configuration for the load watcher which is responsible for collecting load measurements supplied
+// by Slicelets to the Dicer backend.
+message LoadWatcherConfigP {
+
+  // OPTIONAL: If a Slicelet reports load for windows shorter than this duration, those measurements
+  // will not contribute to load balancing decisions. This is to avoid making load balancing
+  // decisions based on insufficient information.
+  optional int32 min_duration_seconds = 1;
+
+  // OPTIONAL: Maximum age of a load report beyond which it will be ignored. This is to avoid making
+  // load balancing decisions based on stale information.
+  optional int32 max_age_seconds = 2;
+
+  // OPTIONAL: Whether to use fine-grained top key information from the Slicelets for load
+  // balancing. If not specified, this defaults to true.
+  optional bool use_top_keys = 3;
+}
+
+// Configuration for the HealthWatcher.
+// TODO(<internal bug>): Revisit once we have confidence in pod readiness reporting.
+message HealthWatcherConfigP {
+
+  // Whether to observe a Slicelet's reported state in health reports. If false, the Assigner will
+  // mask the Slicelet's state as Running at startup even if the Slicelet reports itself as
+  // NOT_READY. This ensures the Slicelet becomes assignable even if it never reports to the
+  // Assigner that it's running (e.g., if the readiness probe on the Slicelet is buggy). Note that
+  // even when observing the Slicelet's state, certain status transitions are disallowed by the
+  // Assigner (e.g., Running -> NotReady).
+  optional bool observe_slicelet_readiness = 1;
+}
+
+// The overall Dicer configuration for a target name. This message is used for data
+// (de)serialization in exchange with SAFE.
+message InternalDicerTargetConfigP {
+  // The name of targets for which this configuration applies. (Targets may also be scoped to
+  // particular clusters, which is why we define the configuration as applying to configurations
+  // with a particular target name, rather than applying to a particular target.)
+  // NOTE: for legacy reasons, the field is named "target", but a more reasonable name would be
+  //       "target_name". Since the protos are serialized in json format, a rename would be a
+  //       breaking change.
+  optional string target = 1;
+
+  // Contains the derived target configuration after applying scope specific overrides.
+  optional TargetConfigFieldsP target_config = 2;
+
+  // Contains the derived advanced target configuration after applying scope specific overrides.
+  optional AdvancedTargetConfigFieldsP advanced_config = 3;
+}

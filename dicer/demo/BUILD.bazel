@@ -1,0 +1,12 @@
+load("@rules_scala//scala:scala.bzl", "scala_binary")
+
+# The Scala binary for running the Dicer Assigner.
+scala_binary(
+    name = "assigner_main",
+    main_class = "com.databricks.dicer.assigner.AssignerMain",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        "//dicer/assigner:dicer-assigner",
+        "//dicer/resources:log4j_config",
+    ],
+)

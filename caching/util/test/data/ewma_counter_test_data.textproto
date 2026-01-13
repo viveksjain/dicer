@@ -1,0 +1,233 @@
+# proto-file: caching/util/test/proto/test_data.proto
+# proto-message: EwmaCounterTestDataP
+
+invalid_cases: [
+  # Non-positive half-life is invalid.
+  { ewma_counter: { half_life_seconds: 0 } error_message_opt: "must be positive" },
+  { ewma_counter: { half_life_seconds: -1 } error_message_opt: "must be positive" },
+  { ewma_counter: { half_life_seconds: 0 seed_opt: 10.0 } error_message_opt: "must be positive" },
+  { ewma_counter: { half_life_seconds: -1 seed_opt: 30.0 } error_message_opt: "must be positive" }
+]
+
+valid_cases: [
+  # Verify that values reported by the EwmaCounter cover windows that extend by one-second
+  # increments as time advances.
+  {
+    ewma_counter: { half_life_seconds: 10 }
+    actions: [
+      { increment_by: { elapsed_ms: 0 value: 10 } },
+      # zero because it's still within the first second.
+      {
+        assert_value_equals: {
+          elapsed_ms: 0 expected: 0 window_low_elapsed_ms: 0 window_high_elapsed_ms: 0
+        }
+      },
+      { increment_by: { elapsed_ms: 50 value: 20 } },
+      # zero because it's still within the first second.
+      {
+        assert_value_equals: {
+          elapsed_ms: 0 expected: 0 window_low_elapsed_ms: 0 window_high_elapsed_ms: 0
+        }
+      },
+      { increment_by: { elapsed_ms: 50 value: 30 } },
+      # still zero because it's within the first second.
+      {
+        assert_value_equals: {
+          elapsed_ms: 0 expected: 0 window_low_elapsed_ms: 0 window_high_elapsed_ms: 0
+        }
+      },
+      { increment_by: { elapsed_ms: 1020 value: 40 } },
+      # Advance beyond the first second. The first measurements (10 + 20 + 30) should now
+      # contribute to the output, but not the measurement from the 2nd second (40).
+      {
+        assert_value_equals: {
+          elapsed_ms: 1020 expected: 60 window_low_elapsed_ms: 0 window_high_elapsed_ms: 1000
+        }
+      },
+      # Advance beyond the 2nd second and check the value.
+      # The weighted value should be between 40 and 60 but closer to 40 than 60 because of decay,
+      # so within (40, 50).
+      {
+        assert_value_in_range: {
+          elapsed_ms: 2500
+          min_value: 40 max_value: 50
+          window_low_elapsed_ms: 0 window_high_elapsed_ms: 2000
+        }
+      }
+    ]
+  },
+  # Verify that measurements decay with the configured half-life. Configure a 10 second half-life,
+  # then supply a steady rate of 20 QPS for 10 seconds followed by 50 QPS fo 10 seconds. The weight
+  # average should give twice the weight to the second QPS: (50 QPS * 2 + 20 QPS) / 3 = 40 QPS.
+  {
+    ewma_counter: { half_life_seconds: 10 }
+    actions: [
+      # Supply 20 QPS for 10 seconds.
+      {
+        repeated_increment: { elapsed_ms: 0 repeat_count: 10 repeat_interval_ms: 1000 value: 20 }
+      },
+      # Check that the weighted value is approximately 20.
+      {
+        assert_value_equals: {
+          elapsed_ms: 10000 expected: 20 window_low_elapsed_ms: 0 window_high_elapsed_ms: 10000
+        }
+      },
+      # Supply 50 QPS for another 10 seconds.
+      {
+        repeated_increment: {
+          elapsed_ms: 10000 repeat_count: 10 repeat_interval_ms: 1000 value: 50
+        }
+      },
+      # Check that the weighted value is approximately (50 * 2 + 20) / 3 ~= 40.
+      {
+        assert_value_equals: {
+          elapsed_ms: 20000 expected: 40 window_low_elapsed_ms: 0 window_high_elapsed_ms: 20000
+        }
+      }
+    ]
+  },
+  # Verify that Poisson distributed (typically used to model rates) inputs result in the expected
+  # rate over time.
+  {
+    ewma_counter: { half_life_seconds: 30 }
+    actions: [
+      # Increment by a Poisson sample with mean 1000 every second for 1000 seconds.
+      {
+        repeated_increment_by_poisson_sample {
+          poisson_mean: 1000 elapsed_ms: 0 repeat_interval_ms: 1000 repeat_count: 1000
+        }
+      },
+      # Verify that the counter value that is within 1% of the expected mean.
+      {
+        assert_value_in_range {
+          elapsed_ms: 1000000 window_low_elapsed_ms: 0 window_high_elapsed_ms: 1000000
+          min_value: 990 max_value: 1010
+        }
+      }
+    ]
+  }
+]
+
+reference_cases: [
+  # Verify that counts decay correctly when multiple seconds elapse between increment calls.
+  # Tests an internal optimization that allows the EwmaCounter to more efficiently update
+  # internal state without incrementally updating that state for every elapsed second. Compares
+  # the behavior of a reference counter that is advanced by one second at a time with the behavior
+  # of a counter that is advanced by multiple seconds in one step.
+  {
+    # No seed 1: half-life is 10 seconds, advance by 20 seconds.
+    ewma_counter: { half_life_seconds: 10 }
+    actions: [
+      # Assert that the initial values match.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # Perform an increment by 10 for both counters.
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: false } },
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: true } },
+      # Assert that the values match after the increment.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # For the reference counter, call get_value 20 times, advancing the time by 1 second between
+      # each call.
+      {
+        repeated_get_value: {
+          elapsed_ms: 0 repeat_count: 20 repeat_interval_ms: 1000 perform_on_reference: true
+        }
+      },
+      # Assert that the values of both counters match at the end of the 20 seconds.
+      { assert_counters_value_match: { main_elapsed_ms: 20000 reference_elapsed_ms: 20000 } }
+    ]
+  },
+  {
+    # No seed 1: half-life is 1 seconds, advance by 10 seconds.
+    ewma_counter: { half_life_seconds: 1 }
+    actions: [
+      # Assert that the initial values match.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # Perform an increment by 10 for both counters.
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: false } },
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: true } },
+      # Assert that the values match after the increment.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # For the reference counter, call get_value 10 times, advancing the time by 1 second between
+      # each call.
+      {
+        repeated_get_value: {
+          elapsed_ms: 0 repeat_count: 10 repeat_interval_ms: 1000 perform_on_reference: true
+        }
+      },
+      # Assert that the values of both counters match at the end of the 10 seconds.
+      { assert_counters_value_match: { main_elapsed_ms: 10000 reference_elapsed_ms: 10000 } }
+    ]
+  },
+  {
+    # Seed provided but with value 0.0: half-life is 1 seconds, advance by 10 seconds.
+    ewma_counter: { half_life_seconds: 10 seed_opt: 0.0 }
+    actions: [
+      # Assert that the initial values match.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # Perform an increment by 10 for both counters.
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: false } },
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: true } },
+      # Assert that the values match after the increment.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # For the reference counter, call get_value 10 times, advancing the time by 1 second between
+      # each call.
+      {
+        repeated_get_value: {
+          elapsed_ms: 0 repeat_count: 10 repeat_interval_ms: 1000 perform_on_reference: true
+        }
+      },
+      # Assert that the values of both counters match at the end of the 10 seconds.
+      { assert_counters_value_match: { main_elapsed_ms: 10000 reference_elapsed_ms: 10000 } }
+    ]
+  },
+  {
+    # Seed value 10.0: half-life is 1 seconds, advance by 10 seconds.
+    ewma_counter: { half_life_seconds: 10 seed_opt: 10.0 }
+    actions: [
+      # Assert that the initial values match.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # Perform an increment by 10 for both counters.
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: false } },
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: true } },
+      # Assert that the values match after the increment.
+      { assert_counters_value_match: { main_elapsed_ms: 0 reference_elapsed_ms: 0 } },
+      # For the reference counter, call get_value 10 times, advancing the time by 1 second between
+      # each call.
+      {
+        repeated_get_value: {
+          elapsed_ms: 0 repeat_count: 10 repeat_interval_ms: 1000 perform_on_reference: true
+        }
+      },
+      # Assert that the values of both counters match at the end of the 10 seconds.
+      { assert_counters_value_match: { main_elapsed_ms: 10000 reference_elapsed_ms: 10000 } }
+    ]
+  },
+  # Test plan: verify that non-monotonic timestamps are handled correctly. Basically, the
+  # behavior should be the same as if the timestamps were monotonic. We verify this by comparing
+  # the output with that of a "reference" counter that is supplied with monotonic timestamps.
+  {
+    ewma_counter: { half_life_seconds: 10 }
+    actions: [
+      # Append initial value 10 to both counters.
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: false } },
+      { increment_by: { elapsed_ms: 0 value: 10 perform_on_reference: true } },
+      # Assert that the value of main counter at start + 2s equals the value of the reference
+      # counter at start + 2s.
+      { assert_counters_value_match: { main_elapsed_ms: 2000 reference_elapsed_ms: 2000 } },
+      # Main counter has a non-monotonic timestamp, add 20 to it at start + 100ms.
+      { increment_by: { elapsed_ms: 100 value: 20 perform_on_reference: false } },
+      # Reference counter has a monotonic timestamp, add 20 to it at start + 2000ms.
+      { increment_by: { elapsed_ms: 2000 value: 20 perform_on_reference: true } },
+      # Assert that the value of main counter at start + 50ms equals the value of the reference
+      # counter at start + 2100ms.
+      { assert_counters_value_match: { main_elapsed_ms: 50 reference_elapsed_ms: 2100 } },
+      # Main counter has a non-monotonic timestamp, add 30 to it at start + 1s.
+      { increment_by: { elapsed_ms: 1000 value: 30 perform_on_reference: false } },
+      # Reference counter has a monotonic timestamp, add 30 to it at start + 2000ms.
+      { increment_by: { elapsed_ms: 2000 value: 30 perform_on_reference: true } },
+      # Assert that the value of main counter at start + 1100ms equals the value of the reference
+      # counter at start + 2000ms.
+      { assert_counters_value_match: { main_elapsed_ms: 1100 reference_elapsed_ms: 2000 } }
+    ]
+  }
+]

@@ -1,0 +1,843 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceletLoadAccumulatorTestDataP
+
+valid_cases: [
+  # Test plan: verify that all load is initially unattributed, as there are no known assigned
+  # Slices when the accumulator is constructed.
+  {
+    name: "Load is initially unattributed"
+    actions: [
+      { increment_primary_load: { bytes_key: "aa" value: 1 } },
+      { increment_primary_load: { bytes_key: "bb" value: 2 } },
+      { advance_clock: { } },
+      {
+        check_unattributed_load: {
+          debug_msg: "All load should be unattributed initially"
+          expected_value: 3.0
+        }
+      },
+      {
+        check_attributed_loads: {
+          debug_msg: "No attributed loads initially"
+          expected_size: 0
+        }
+      },
+      {
+        check_unattributed_load: {
+          debug_msg: "Unattributed load metrics should be correctly updated"
+          expected_counter_value: 3
+        }
+      },
+      {
+        check_attributed_loads: {
+          debug_msg: "Total attributed load should be correctly updated"
+          expected_counter_value: 0
+        }
+      }
+    ]
+  },
+
+  {
+    # Test plan: verify that incrementing negative or zero load is ignored. This is done by
+    # incrementing negative and zero load for various SliceKeys, advancing the clock, and
+    # verify that both attributed and unattributed loads are 0.
+    name: "Negative and zero load is ignored"
+    actions: [
+      { increment_primary_load: { bytes_key: "aa" value: -1000 } },
+      { increment_primary_load: { bytes_key: "bb" value: 0 } },
+      { increment_primary_load: { bytes_key: "bb" value: -50 } },
+      { increment_primary_load: { bytes_key: "cc" value: 0 } },
+      { increment_primary_load: { bytes_key: "cc" value: -5 } },
+      { advance_clock: { } },
+      {
+        check_unattributed_load: {
+          debug_msg: "Unattributed load should be 0 after negative and zero increments"
+          expected_value: 0.0
+        }
+      },
+      {
+        check_attributed_loads: {
+          debug_msg: "No attributed loads after negative and zero increments"
+          expected_size: 0
+        }
+      },
+      {
+        check_unattributed_load: {
+          debug_msg: "Unattributed load metrics should be correctly updated"
+          expected_counter_value: 0
+        }
+      },
+      {
+        check_attributed_loads: {
+          debug_msg: "Total attributed load should be correctly updated"
+          expected_counter_value: 0
+        }
+      }
+    ]
+
+  },
+
+  {
+    # Test plan: supply an assignment to the load accumulator and verify that load is tracked for
+    # each assigned Slice, and that load reported for unassigned Slices is aggregated in the
+    # "unattributed" counter. In this variation, the assignment provides no historical load data
+    # and as such the accumulators will initially report no load for any Slice.
+    name: "Load reported at assigned Slice boundaries (no history)"
+    actions: [
+      # Setup assignment
+      {
+        change_assignment: {
+          generation: { incarnation: 2 number: 42 }
+          current_squid: "slicelet-0"
+          new_assignment: [
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { high_exclusive: "bb" }
+              resources: ["slicelet-0", "slicelet-1"]
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "bb" high_exclusive: "cc" }
+              resources: ["slicelet-1", "slicelet-2"]
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "cc" high_exclusive: "dd" }
+              resources: ["slicelet-0", "slicelet-2"]
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "dd" high_exclusive: "ee" }
+              resources: ["slicelet-0"]
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "ee" } # ["ee", ∞)
+              resources: ["slicelet-2"]
+            }
+          ]
+        }
+      },
+      # Increment loads for various slices
+      { increment_primary_load: { bytes_key: "bb" value: 1 } }, # unassigned
+      { increment_primary_load: { bytes_key: "cc" value: 2 } }, # assigned
+      { increment_primary_load: { bytes_key: "cd" value: 3 } }, # assigned
+      { increment_primary_load: { bytes_key: "df" value: 40 } }, # assigned
+      { increment_primary_load: { bytes_key: "ee" value: 20 } }, # unassigned
+      # Advance clock and check loads
+      { advance_clock { } },
+      { check_unattributed_load: {
+        debug_msg: "Unassigned load should be collected as unattributed"
+        expected_value: 21.0
+      } },
+      {
+        check_attributed_loads: {
+          debug_msg: "Assigned load should be tracked per slice"
+          expected_size: 3
+          expected_loads: [
+            {
+              slice: { high_exclusive: "bb" }
+              primary_rate_load: 0
+              window_low_inclusive_seconds: 0
+              window_high_exclusive_seconds: 1
+              num_replicas: 2
+            },
+            {
+              slice: { low_inclusive: "cc" high_exclusive: "dd" }
+              primary_rate_load: 5
+              window_low_inclusive_seconds: 0
+              window_high_exclusive_seconds: 1
+              top_keys: [
+                { slice_key: "cc" underestimated_primary_rate_load: 2 },
+                { slice_key: "cd" underestimated_primary_rate_load: 3 }
+              ]
+              num_replicas: 2
+            },
+            {
+              slice: { low_inclusive: "dd" high_exclusive: "ee" }
+              primary_rate_load: 40
+              window_low_inclusive_seconds: 0
+              window_high_exclusive_seconds: 1
+              top_keys: [
+                { slice_key: "df" underestimated_primary_rate_load: 40 }
+              ]
+              num_replicas: 1
+            }
+          ]
+        }
+      },
+      { check_unattributed_load: {
+        debug_msg: "Load is exported to unattributed load counter"
+        expected_counter_value: 21
+      } },
+      { check_attributed_loads: {
+        debug_msg: "Load is exported to total attributed load counter"
+        expected_counter_value: 45
+      } }
+    ]
+  },
+
+  {
+    # Test plan: supply an assignment to the load accumulator and verify that load is tracked for
+    # each assigned Slice, and that load reported for unassigned Slices is aggregated in the
+    # "unattributed" counter. In this variation, the assignment includes historical load
+    # information that contributes to the load reported from the Slicelet.
+    name: "Load reported at assigned Slice boundaries (with history)"
+    actions: [
+      # Supply an assignment in which some Slices are assigned to the current Slicelet, identified
+      # by `slicelet-0`, and the remaining Slices are assigned to other Slicelets.
+      {
+        change_assignment: {
+          generation: { incarnation: 2 number: 42 }
+          current_squid: "slicelet-0"
+          new_assignment: [
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { high_exclusive: "bb" } # ["", "bb")
+              resources: ["slicelet-0", "slicelet-1"]
+              primary_rate_load_opt: 50.0
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "bb" high_exclusive: "cc" }
+              resources: ["slicelet-1", "slicelet-3"]
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "cc" high_exclusive: "dd" }
+              resources: ["slicelet-0", "slicelet-1", "slicelet-2"]
+              primary_rate_load_opt: 75.0
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "dd" high_exclusive: "ee" }
+              resources: ["slicelet-0"]
+              primary_rate_load_opt: 30.0
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "ee" } # ["ee", ∞)
+              resources: ["slicelet-2"]
+            }
+          ]
+        }
+      },
+      # Increment loads for various slices
+      { increment_primary_load: { bytes_key: "bb" value: 1 } }, # unassigned
+      { increment_primary_load: { bytes_key: "cc" value: 2 } }, # assigned
+      { increment_primary_load: { bytes_key: "cd" value: 3 } }, # assigned
+      { increment_primary_load: { bytes_key: "df" value: 40 } }, # assigned
+      { increment_primary_load: { bytes_key: "ee" value: 20 } }, # unassigned
+      # Advance clock and check loads
+      { advance_clock { } },
+      { check_unattributed_load: {
+        debug_msg: "Unassigned load should be collected as unattributed"
+        expected_value: 21.0
+      } },
+      # Check load for first slice - has historical load 50.0/2 = 25.0 but no calls
+      {
+        check_attributed_loads: {
+          debug_msg: "First slice should have slightly decayed historical load"
+          expected_size: 3
+          expected_slice_info: [
+            {
+              slice: { high_exclusive: "bb" }
+              approximate_primary_load: 24.9
+            },
+            {
+              slice: { low_inclusive: "cc" high_exclusive: "dd" }
+              approximate_primary_load: 24.9
+            },
+            {
+              slice: { low_inclusive: "dd" high_exclusive: "ee" }
+              approximate_primary_load: 30.1
+            }
+          ]
+        }
+      },
+      # Verify metrics
+      { check_unattributed_load: {
+        debug_msg: "Load is exported to unattributed load counter"
+        expected_counter_value: 21
+      } },
+      { check_attributed_loads: {
+        debug_msg: "Load is exported to total attributed load counter"
+        expected_counter_value: 45
+      } }
+    ]
+  },
+
+  {
+    # Test plan: record load on the accumulator and verify that its contribution decays over time.
+    # Include load for both assigned and unassigned Slices.
+    name: "Accumulator load decays"
+    actions: [
+      # Setup assignment where ["", "bb") is assigned to slicelet-0 and ["bb", ∞) is unassigned
+      {
+        change_assignment: {
+          generation: { incarnation: 2 number: 42 }
+          current_squid: "slicelet-0"
+          new_assignment: [
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { high_exclusive: "bb" }  # ["", "bb")
+              resources: ["slicelet-0", "slicelet-other-0"]
+            },
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "bb" }  # ["bb", ∞)
+              resources: ["slicelet-other-1"]
+            }
+          ]
+        }
+      },
+      # Record some load in the first second
+      { increment_primary_load: { bytes_key: "ae" value: 1 } }, # assigned
+      { increment_primary_load: { bytes_key: "ab" value: 20 } }, # assigned
+      { increment_primary_load: { bytes_key: "aa" value: 1 } }, # assigned
+      { increment_primary_load: { bytes_key: "bb" value: 300 } }, # unassigned
+      { increment_primary_load: { bytes_key: "bf" value: 100 } }, # unassigned
+      # Advance clock and verify initial load values
+      { advance_clock: { } },
+      { check_attributed_loads: {
+        debug_msg: "Should have 1 attributed slice with load 22.0"
+        expected_size: 1
+        expected_loads: [
+          {
+            slice: { high_exclusive: "bb" }
+            primary_rate_load: 22.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "ab" underestimated_primary_rate_load: 20 }
+            ]
+            num_replicas: 2
+          }
+        ]
+      } },
+      { check_unattributed_load: {
+        debug_msg: "Should have unattributed load of 400.0"
+        expected_value: 400.0
+      } },
+      # Advance time without supplying additional load to verify decay
+      { advance_clock: { } },
+      { check_attributed_loads: {
+        debug_msg: "Attributed load should have decayed"
+        expected_size: 1
+        expected_decay: true
+      } },
+      { check_unattributed_load: {
+        debug_msg: "Unattributed load should have decayed"
+        expected_decay: true
+      } },
+      # Verify final Prometheus metrics (should reflect the original values)
+      { check_unattributed_load: {
+        debug_msg: "Prometheus unattributed metric should show original value"
+        expected_counter_value: 400
+      } },
+      { check_attributed_loads: {
+        debug_msg: "Prometheus attributed metric should show original value"
+        expected_counter_value: 22
+      } }
+    ]
+  },
+
+  {
+    # Test plan: supply a sequence of assignments to an accumulator as well as non-zero load for
+    # assigned Slices to verify that counts are preserved for continuously assigned (complete)
+    # Slices with unchanged number of replicas, and reset or reseeded for newly assigned Slices,
+    # partially newly assigned Slices, and Slices which remain assigned but whose number of
+    # replicas has changed.
+    name: "Accumulator preserves counts for stable assignments and uses historical load"
+    actions: [
+      # First assignment with generation 42
+      {
+        change_assignment: {
+          generation: { incarnation: 2 number: 42 }
+          current_squid: "slicelet-0"
+          new_assignment: [
+            # Assigned to squid + otherSquid1
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { high_exclusive: "bb" }  # ["", "bb")
+              resources: ["slicelet-0", "other-slicelet-1"]
+            },
+            # Unassigned (otherSquid1 only)
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "bb" high_exclusive: "cc" }  # ["bb", "cc")
+              resources: ["other-slicelet-1"]
+            },
+            # Assigned to squid + otherSquid2
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "cc" high_exclusive: "dd" }  # ["cc", "dd")
+              resources: ["slicelet-0", "other-slicelet-2"]
+            },
+            # Assigned to squid + otherSquid2
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "dd" high_exclusive: "ee" }  # ["dd", "ee")
+              resources: ["slicelet-0", "other-slicelet-2"]
+            },
+            # Assigned to squid + otherSquid2 + otherSquid3
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "ee" high_exclusive: "ff" }  # ["ee", "ff")
+              resources: ["slicelet-0", "other-slicelet-2", "other-slicelet-3"]
+            },
+            # Assigned to squid + otherSquid1 + otherSquid2
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "ff" high_exclusive: "gg" }  # ["ff", "gg")
+              resources: ["slicelet-0", "other-slicelet-1", "other-slicelet-2"]
+            },
+            # Assigned to squid + otherSquid2 + otherSquid3
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "gg" high_exclusive: "hh" }  # ["gg", "hh")
+              resources: ["slicelet-0", "other-slicelet-2", "other-slicelet-3"]
+            },
+            # Unassigned (otherSquid3 only)
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "hh" }  # ["hh", ∞)
+              resources: ["other-slicelet-3"]
+            }
+          ]
+        }
+      },
+      # Record some load for assigned Slices prior to the assignment change
+      { increment_primary_load: { bytes_key: "aa" value: 2 } }, # assigned to ["", "bb")
+      { increment_primary_load: { bytes_key: "cc" value: 1 } }, # assigned to ["cc", "dd")
+      { increment_primary_load: { bytes_key: "dd" value: 3 } }, # assigned to ["dd", "ee")
+      { increment_primary_load: { bytes_key: "ee" value: 4 } }, # assigned to ["ee", "ff")
+      { increment_primary_load: { bytes_key: "ff" value: 5 } }, # assigned to ["ff", "gg")
+      { increment_primary_load: { bytes_key: "gg" value: 6 } }, # assigned to ["gg", "hh")
+      # Advance clock to make measurements available
+      { advance_clock: { } },
+      # Verify first assignment results
+      { check_attributed_loads: {
+        debug_msg: "First assignment should have 6 attributed slices with expected loads"
+        expected_size: 6
+        expected_loads: [
+          {
+            slice: { high_exclusive: "bb" }
+            primary_rate_load: 2.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "aa" underestimated_primary_rate_load: 2 }
+            ]
+            num_replicas: 2
+          },
+          {
+            slice: { low_inclusive: "cc" high_exclusive: "dd" }
+            primary_rate_load: 1.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "cc" underestimated_primary_rate_load: 1 }
+            ]
+            num_replicas: 2
+          },
+          {
+            slice: { low_inclusive: "dd" high_exclusive: "ee" }
+            primary_rate_load: 3.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "dd" underestimated_primary_rate_load: 3 }
+            ]
+            num_replicas: 2
+          },
+          {
+            slice: { low_inclusive: "ee" high_exclusive: "ff" }
+            primary_rate_load: 4.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "ee" underestimated_primary_rate_load: 4 }
+            ]
+            num_replicas: 3
+          },
+          {
+            slice: { low_inclusive: "ff" high_exclusive: "gg" }
+            primary_rate_load: 5.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "ff" underestimated_primary_rate_load: 5 }
+            ]
+            num_replicas: 3
+          },
+          {
+            slice: { low_inclusive: "gg" high_exclusive: "hh" }
+            primary_rate_load: 6.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "gg" underestimated_primary_rate_load: 6 }
+            ]
+            num_replicas: 3
+          }
+        ]
+      } },
+      { check_unattributed_load: {
+        debug_msg: "No misdirected load in first assignment"
+        expected_value: 0.0
+      } },
+      { check_unattributed_load: {
+        debug_msg: "Unattributed load metric should be 0"
+        expected_counter_value: 0
+      } },
+      { check_attributed_loads: {
+        debug_msg: "Total attributed load should be 21.0"
+        expected_counter_value: 21
+      } },
+      # Second assignment with generation 47 (more complex with splits, merges, etc.)
+      {
+        change_assignment: {
+          generation: { incarnation: 2 number: 47 }
+          current_squid: "slicelet-0"
+          new_assignment: [
+            # Split from ["", "bb"), still assigned
+            {
+              generation: { incarnation: 2 number: 47 }
+              slice: { high_exclusive: "aa" }  # ["", "aa")
+              resources: ["slicelet-0", "other-slicelet-1"]
+              primary_rate_load_opt: 10.0
+            },
+            # Split from ["", "bb"), unassigned
+            {
+              generation: { incarnation: 2 number: 47 }
+              slice: { low_inclusive: "aa" high_exclusive: "bb" }  # ["aa", "bb")
+              resources: ["other-slicelet-1", "other-slicelet-2"]
+            },
+            # Unchanged, still unassigned
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "bb" high_exclusive: "cc" }  # ["bb", "cc")
+              resources: ["other-slicelet-2"]
+            },
+            # Merged from ["cc", "dd") and ["dd", "ee"), still assigned
+            {
+              generation: { incarnation: 2 number: 47 }
+              slice: { low_inclusive: "cc" high_exclusive: "ee" }  # ["cc", "ee")
+              resources: ["slicelet-0", "other-slicelet-2"]
+            },
+            # Unchanged, still assigned
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "ee" high_exclusive: "ff" }  # ["ee", "ff")
+              resources: ["slicelet-0", "other-slicelet-2", "other-slicelet-3"]
+            },
+            # Assigned with same boundaries, but has more replicas
+            {
+              generation: { incarnation: 2 number: 47 }
+              slice: { low_inclusive: "ff" high_exclusive: "gg" }  # ["ff", "gg")
+              resources: ["slicelet-0", "other-slicelet-1", "other-slicelet-2", "other-slicelet-3"]
+              primary_rate_load_opt: 100.0
+            },
+            # Assigned with same boundaries, but has fewer replicas
+            {
+              generation: { incarnation: 2 number: 47 }
+              slice: { low_inclusive: "gg" high_exclusive: "hh" }  # ["gg", "hh")
+              resources: ["slicelet-0", "other-slicelet-1"]
+              primary_rate_load_opt: 40.0
+            },
+            # Unchanged, still unassigned
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "hh" }  # ["hh", ∞)
+              resources: ["other-slicelet-3"]
+            }
+          ]
+        }
+      },
+      # Verify second assignment results (with expected resets and preservation)
+      { check_attributed_loads: {
+        debug_msg: "Second assignment should have 5 attributed slices with expected behaviors"
+        expected_size: 5
+        expected_loads: [
+          {
+            # Split slice: uses historical load after split
+            slice: { high_exclusive: "aa" }
+            primary_rate_load: 5.0  # 10.0 / 2 replicas
+            window_low_inclusive_seconds: 1
+            window_high_exclusive_seconds: 1
+            num_replicas: 2
+          },
+          {
+            # Merged slice: reset due to merge
+            slice: { low_inclusive: "cc" high_exclusive: "ee" }
+            primary_rate_load: 0.0
+            window_low_inclusive_seconds: 1
+            window_high_exclusive_seconds: 1
+            num_replicas: 2
+          },
+          {
+            # Unchanged slice: preserved since the assigned slice is unchanged
+            slice: { low_inclusive: "ee" high_exclusive: "ff" }
+            primary_rate_load: 4.0
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "ee" underestimated_primary_rate_load: 4 }
+            ]
+            num_replicas: 3
+          },
+          {
+            # More replicas: reseeded since the number of replicas increased
+            slice: { low_inclusive: "ff" high_exclusive: "gg" }
+            primary_rate_load: 25.0  # 100.0 / 4 replicas
+            window_low_inclusive_seconds: 1
+            window_high_exclusive_seconds: 1
+            num_replicas: 4
+          },
+          {
+            # Fewer replicas: reseeded since the number of replicas decreased
+            slice: { low_inclusive: "gg" high_exclusive: "hh" }
+            primary_rate_load: 20.0  # 40.0 / 2 replicas
+            window_low_inclusive_seconds: 1
+            window_high_exclusive_seconds: 1
+            num_replicas: 2
+          }
+        ]
+      } },
+      { check_unattributed_load: {
+        debug_msg: "No misdirected load in second assignment"
+        expected_value: 0.0
+      } }
+    ]
+  },
+
+  {
+    # Test plan: Verify that the reported SliceLoad only includes top keys that exceed
+    # `TOP_KEYS_MINIMUM_LOAD_FRACTION` of the total load. Supply an assignment to the load
+    # accumulator and verify that top keys are tracked for the assigned Slice, but if the load for
+    # a key is too low then it will get dropped. If we then increment enough load for the key, it
+    # will be included in the next report.
+    name: "Top keys minimum fraction is enforced"
+    actions: [
+      # Supply an assignment in which a single Slice is assigned to the current Slicelet
+      {
+        change_assignment: {
+          generation: { incarnation: 2 number: 42 }
+          current_squid: "slicelet-0"
+          new_assignment: [
+            # Single slice assigned to current slicelet
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { high_exclusive: "zz" }  # ["", "zz") - covers most keys
+              resources: ["slicelet-0"]
+            },
+            # Remaining slice unassigned
+            {
+              generation: { incarnation: 2 number: 42 }
+              slice: { low_inclusive: "zz" }  # ["zz", ∞)
+              resources: ["slicelet-1"]
+            }
+          ]
+        }
+      },
+      # Increment load by 20 for 10 assigned keys (hot keys)
+      { increment_primary_load: { bytes_key: "aa" value: 20 } },
+      { increment_primary_load: { bytes_key: "bb" value: 20 } },
+      { increment_primary_load: { bytes_key: "cc" value: 20 } },
+      { increment_primary_load: { bytes_key: "dd" value: 20 } },
+      { increment_primary_load: { bytes_key: "ee" value: 20 } },
+      { increment_primary_load: { bytes_key: "ff" value: 20 } },
+      { increment_primary_load: { bytes_key: "gg" value: 20 } },
+      { increment_primary_load: { bytes_key: "hh" value: 20 } },
+      { increment_primary_load: { bytes_key: "ii" value: 20 } },
+      { increment_primary_load: { bytes_key: "jj" value: 20 } },
+      # Increment load by 1 for another special key (below minimum fraction)
+      { increment_primary_load: { bytes_key: "xx" value: 1 } },
+      # Advance clock to make measurements available
+      { advance_clock: { } },
+      # Verify that hot keys are included but low-load key is excluded
+      { check_attributed_loads: {
+        debug_msg: "Hot keys should be included, low-load key should be excluded"
+        expected_size: 1
+        expected_loads: [
+          {
+            slice: { high_exclusive: "zz" }
+            primary_rate_load: 201.0  # 10 * 20 + 1 = 201
+            window_low_inclusive_seconds: 0
+            window_high_exclusive_seconds: 1
+            top_keys: [
+              { slice_key: "aa" underestimated_primary_rate_load: 20 },
+              { slice_key: "bb" underestimated_primary_rate_load: 20 },
+              { slice_key: "cc" underestimated_primary_rate_load: 20 },
+              { slice_key: "dd" underestimated_primary_rate_load: 20 },
+              { slice_key: "ee" underestimated_primary_rate_load: 20 },
+              { slice_key: "ff" underestimated_primary_rate_load: 20 },
+              { slice_key: "gg" underestimated_primary_rate_load: 20 },
+              { slice_key: "hh" underestimated_primary_rate_load: 20 },
+              { slice_key: "ii" underestimated_primary_rate_load: 20 },
+              { slice_key: "jj" underestimated_primary_rate_load: 20 }
+            ]
+            num_replicas: 1
+          }
+        ]
+      } },
+      # Report enough additional load for the special key that it gets included
+      { increment_primary_load: { bytes_key: "xx" value: 20 } },
+      { advance_clock: { } },
+      # Verify that the special key is now included in top keys
+      { check_attributed_loads: {
+        debug_msg: "Special key should now be included after additional load"
+        expected_size: 1
+        expected_slice_info: [
+          {
+            slice: { high_exclusive: "zz" }
+            # Load values will be scaled due to EWMA, so we check that all expected keys are present
+            top_slice_keys: [
+              "aa",
+              "bb",
+              "cc",
+              "dd",
+              "ee",
+              "ff",
+              "gg",
+              "hh",
+              "ii",
+              "jj",
+              "xx" # Now included due to sufficient load
+            ]
+          }
+        ]
+      } }
+    ]
+  },
+
+  # Test plan: Verify that the accumulator tracks the distribution of load over SliceKeys, and
+  # keeps the corresponding Prometheus histogram metric updated on calls to `updateMetrics`.
+  # Verify this by reporting load on various SliceKeys, updating metrics, and checking that the
+  # Prometheus histogram accurately reflects SliceKey load.
+  {
+    name: "accumulator updates SliceKey load distribution histogram correctly"
+    actions: [
+      # Setup: The most-significant-byte of the SliceKey is used to convert it to a value between
+      # [0, 1] and there are 256 buckets, so we generate SliceKeys using Longs where we set the top
+      # byte to various values. Also include the MIN SliceKey to check the case where the byte
+      # length is zero.
+      { increment_primary_load: { value: 1 } }, # Min key
+      { increment_primary_load: { key: 0 value: 2 } },
+      { increment_primary_load: { key: 72057594037927936 value: 3 } }, # 1L << 56
+      { increment_primary_load: { key: 3026418949592973312 value: 4 } }, # 42L << 56
+      { increment_primary_load: { key: 9151314442816847872 value: 5 } }, # 127L << 56
+      { increment_primary_load: { key: -9223372036854775808 value: 6 } }, # 128L << 56
+      { increment_primary_load: { key: -72057594037927936 value: 7 } }, # 255L << 56
+      # Verify: The Prometheus metric is not updated until `update_metrics` is called.
+      { histogram_bucket_check: {
+        debug_msg: "metric is not updated until update_metrics is called"
+        bucket_index: 255
+        expected: 0
+      } },
+      # Setup: Update the Prometheus histogram.
+      { update_metrics { } },
+      # Verify: Check that SliceKeys with MSB == N are mapped to the Nth histogram bucket with
+      # le = (N+1)/256
+      { histogram_bucket_check: {
+        debug_msg: "MIN key and 0 is mapped to bucket 0"
+        bucket_index: 0
+        expected: 3
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Key 72057594037927936 (1L << 56) is mapped to bucket 1"
+        bucket_index: 1
+        expected: 6
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "No keys with MSB between 2 and 41 inclusive"
+        bucket_index: 41
+        expected: 6
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Key 3026418949592973312 (42L << 56) is mapped to bucket 43"
+        bucket_index: 42
+        expected: 10
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Key 9151314442816847872 (127L << 56) is mapped to bucket 127"
+        bucket_index: 127
+        expected: 15
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Key -9223372036854775808 (128L << 56) is mapped to bucket 128"
+        bucket_index: 128
+        expected: 21
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Nothing from the 129th bucket to the 254th bucket."
+        bucket_index: 254
+        expected: 21
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "The last bucket (+Inf) captures the key with MSB == 255."
+        bucket_index: 255
+        expected: 28
+      } },
+      # Setup: call `updateMetrics` again and ensure that the same counts hold.
+      { update_metrics { } },
+      { histogram_bucket_check: {
+        debug_msg: "Bucket counts should remain the same"
+        bucket_index: 0
+        expected: 3
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Bucket counts should remain the same"
+        bucket_index: 42
+        expected: 10
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Bucket counts should remain the same"
+        bucket_index: 128
+        expected: 21
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Bucket counts should remain the same"
+        bucket_index: 255
+        expected: 28
+      } },
+      # Setup: Record load on more SliceKeys and update metrics.
+      { increment_primary_load: { key: 4827858800541171712 value: 8 } }, # 67L << 56
+      { increment_primary_load: { key: -5548434740920451072 value: 9 } }, # 179L << 56
+      { increment_primary_load: { key: -360287970189639680 value: 10 } }, # 251L << 56
+      { update_metrics { } },
+      # Verify: Counts increased. Check around the expected buckets.
+      { histogram_bucket_check: {
+        debug_msg: "Nothing changes in the first 66 buckets"
+        bucket_index: 66
+        expected: 10
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Key 4827858800541171712 (67L << 56) is mapped to bucket 67"
+        bucket_index: 67
+        expected: 18
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Nothing added between the 68th and 178th buckets"
+        bucket_index: 178
+        expected: 29
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Key -5548434740920451072 (179L << 56) is mapped to bucket 179"
+        bucket_index: 179
+        expected: 38
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "Nothing added between the 180th and 250th buckets"
+        bucket_index: 250
+        expected: 38
+      } },
+      { histogram_bucket_check: {
+        debug_msg: "All three keys are included in the 251st bucket."
+        bucket_index: 251
+        expected: 48
+      } }
+    ]
+  }
+]

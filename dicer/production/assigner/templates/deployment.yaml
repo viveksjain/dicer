@@ -1,0 +1,88 @@
+# Deployment for Dicer Assigner service.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- range $key, $value := .Values.labels }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- range $key, $value := .Values.labels }}
+      {{ $key }}: {{ $value }}
+      {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- range $key, $value := .Values.labels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        # Forces pod restart on helm upgrade by setting unique timestamp.
+        deploymentTime: "{{ now | unixEpoch }}"
+    spec:
+      {{- if .Values.tls.enabled }}
+      volumes:
+      - name: tls-certs
+        secret:
+          secretName: {{ .Values.tls.secretName }}
+      {{- end }}
+      containers:
+      - name: assigner
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.tls.enabled }}
+        volumeMounts:
+        - name: tls-certs
+          mountPath: {{ .Values.tls.mountPath }}
+          readOnly: true
+        {{- end }}
+        env:
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        # Provide location configuration for production.
+        - name: LOCATION
+          value: >-
+            {"kubernetes_cluster_uri":
+            "{{ .Values.location.kubernetesClusterUri }}"}
+        # Load configuration from ConfigMap
+        - name: DB_CONF
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.service.name }}-config
+              key: config.json
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: grpc
+          protocol: TCP
+        - containerPort: {{ .Values.container.infoPort }}
+          name: info
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.service.port }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+        {{- if .Values.resources }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- end }}

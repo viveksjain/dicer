@@ -1,0 +1,376 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceMapTestDataP
+
+validate_complete_slices_test_cases: [
+  {
+    expected_error: "Must not be empty"
+  },
+  {
+    slices: [
+      { low_inclusive: "Balin" high_exclusive: "Fili" }
+    ]
+    expected_error: "First entry must start at \"\""
+  },
+  {
+    slices: [
+      { low_inclusive: "" high_exclusive: "Balin" },
+      { low_inclusive: "Fili" }
+    ]
+    expected_error: "Gap between successive entries"
+  },
+  {
+    slices: [
+      { low_inclusive: "" high_exclusive: "Fili" },
+      { low_inclusive: "Balin" }
+    ]
+    expected_error: "Overlap between successive entries"
+  },
+  {
+    slices: [
+      { low_inclusive: "" high_exclusive: "Balin" }
+    ]
+    expected_error: "Last entry must have Infinity upper bound"
+  },
+  {
+    slices: [
+      { low_inclusive: "" },
+      { low_inclusive: "Fili" }
+    ]
+    expected_error: "Only last entry may have Infinity upper bound"
+  },
+  # Valid set of slices (no error expected):
+  {
+    slices: [
+      { low_inclusive: "" high_exclusive: "Balin" },
+      { low_inclusive: "Balin" high_exclusive: "Fili" },
+      { low_inclusive: "Fili" }
+    ]
+  }
+]
+
+intersect_test_cases: [
+  # Aligned slices on left and right. The left and right hand side have entries with the same
+  # slices, so the expected output includes the same Slices as the inputs.
+  {
+    left_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "10" } value: "resource1" },
+      { slice: { low_inclusive: "10" high_exclusive: "20" } value: "resource2" },
+      { slice: { low_inclusive: "20" } value: "resource1" }
+    ]
+    right_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "10" } value: 0 },
+      { slice: { low_inclusive: "10" high_exclusive: "20" } value: 1 },
+      { slice: { low_inclusive: "20" } value: 2 }
+    ]
+    expected_intersection_entries: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "10" }
+        left_index: 0
+        right_index: 0
+      },
+      {
+        slice: { low_inclusive: "10" high_exclusive: "20" }
+        left_index: 1
+        right_index: 1
+      },
+      {
+        slice: { low_inclusive: "20" }
+        left_index: 2
+        right_index: 2
+      }
+    ]
+  },
+  # Slices merged from left to right: the first two slices on the left are merged into a single
+  # slice on the right. The expected output has entries corresponding to each entry on the left.
+  {
+    left_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "10" } value: "resource1" },
+      { slice: { low_inclusive: "10" high_exclusive: "20" } value: "resource2" },
+      { slice: { low_inclusive: "20" } value: "resource1" }
+    ]
+    right_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "20" } value: 0 },
+      { slice: { low_inclusive: "20" } value: 1 }
+    ]
+    expected_intersection_entries: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "10" }
+        left_index: 0
+        right_index: 0
+      },
+      {
+        slice: { low_inclusive: "10" high_exclusive: "20" }
+        left_index: 1
+        right_index: 0
+      },
+      {
+        slice: { low_inclusive: "20" }
+        left_index: 2
+        right_index: 1
+      }
+    ]
+  },
+  # Slices split from left to right: the first slice on the left is split into two slices on the
+  # right. The expected output has entries corresponding to each entry on the right.
+  {
+    left_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "20" } value: "resource1" },
+      { slice: { low_inclusive: "20" } value: "resource2" }
+    ]
+    right_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "10" } value: 0 },
+      { slice: { low_inclusive: "10" high_exclusive: "20" } value: 1 },
+      { slice: { low_inclusive: "20" } value: 2 }
+    ]
+    expected_intersection_entries: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "10" }
+        left_index: 0
+        right_index: 0
+      },
+      {
+        slice: { low_inclusive: "10" high_exclusive: "20" }
+        left_index: 0
+        right_index: 1
+      },
+      {
+        slice: { low_inclusive: "20" }
+        left_index: 1
+        right_index: 2
+      }
+    ]
+  },
+  # Misaligned boundaries in left and right. This is the example depicted visually in the docs for
+  # `SliceMap.intersectSlices`, where left-hand entries are labelled with letters and
+  # right-hand entries are labelled with numbers.
+  {
+    left_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "20" } value: "resource1" },
+      { slice: { low_inclusive: "20" high_exclusive: "30" } value: "resource2" },
+      { slice: { low_inclusive: "30" high_exclusive: "40" } value: "resource1" },
+      { slice: { low_inclusive: "40" } value: "resource4" }
+    ]
+    right_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "10" } value: 0 },
+      { slice: { low_inclusive: "10" high_exclusive: "50" } value: 1 },
+      { slice: { low_inclusive: "50" high_exclusive: "60" } value: 2 },
+      { slice: { low_inclusive: "60" } value: 3 }
+    ]
+    expected_intersection_entries: [
+      {
+        slice: { low_inclusive: "" high_exclusive: "10" }
+        left_index: 0
+        right_index: 0
+      },
+      {
+        slice: { low_inclusive: "10" high_exclusive: "20" }
+        left_index: 0
+        right_index: 1
+      },
+      {
+        slice: { low_inclusive: "20" high_exclusive: "30" }
+        left_index: 1
+        right_index: 1
+      },
+      {
+        slice: { low_inclusive: "30" high_exclusive: "40" }
+        left_index: 2
+        right_index: 1
+      },
+      {
+        slice: { low_inclusive: "40" high_exclusive: "50" }
+        left_index: 3
+        right_index: 1
+      },
+      {
+        slice: { low_inclusive: "50" high_exclusive: "60" }
+        left_index: 3
+        right_index: 2
+      },
+      {
+        slice: { low_inclusive: "60" }
+        left_index: 3
+        right_index: 3
+      }
+    ]
+  }
+]
+
+partial_slice_map_test_cases: [
+  # Test cases with a single gap at each of the possible positions:
+  {
+    input_slices: [
+      { low_inclusive: "a" high_exclusive: "b" },
+      { low_inclusive: "b" high_exclusive: "c" },
+      { low_inclusive: "c" high_exclusive: "d" },
+      { low_inclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: GAP },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: SOME },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: SOME },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: SOME },
+      { slice: { low_inclusive: "d" } value_type: SOME }
+    ]
+  },
+  {
+    input_slices: [
+      { low_inclusive: "" high_exclusive: "a" },
+      { low_inclusive: "b" high_exclusive: "c" },
+      { low_inclusive: "c" high_exclusive: "d" },
+      { low_inclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: GAP },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: SOME },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: SOME },
+      { slice: { low_inclusive: "d" } value_type: SOME }
+    ]
+  },
+  {
+    input_slices: [
+      { low_inclusive: "" high_exclusive: "a" },
+      { low_inclusive: "a" high_exclusive: "b" },
+      { low_inclusive: "c" high_exclusive: "d" },
+      { low_inclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: SOME },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: GAP },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: SOME },
+      { slice: { low_inclusive: "d" } value_type: SOME }
+    ]
+  },
+  {
+    input_slices: [
+      { low_inclusive: "" high_exclusive: "a" },
+      { low_inclusive: "a" high_exclusive: "b" },
+      { low_inclusive: "b" high_exclusive: "c" },
+      { low_inclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: SOME },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: SOME },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: GAP },
+      { slice: { low_inclusive: "d" } value_type: SOME }
+    ]
+  },
+  {
+    input_slices: [
+      { low_inclusive: "" high_exclusive: "a" },
+      { low_inclusive: "a" high_exclusive: "b" },
+      { low_inclusive: "b" high_exclusive: "c" },
+      { low_inclusive: "c" high_exclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: SOME },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: SOME },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: SOME },
+      { slice: { low_inclusive: "d" } value_type: GAP }
+    ]
+  },
+
+  # Gap at the start and in the middle:
+  {
+    input_slices: [
+      { low_inclusive: "b" high_exclusive: "c" },
+      { low_inclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "b" } value_type: GAP },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: SOME },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: GAP },
+      { slice: { low_inclusive: "d" } value_type: SOME }
+    ]
+  },
+
+  # Gap in the middle and at the end:
+  {
+    input_slices: [
+      { low_inclusive: "" high_exclusive: "a" },
+      { low_inclusive: "c" high_exclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" high_exclusive: "c" } value_type: GAP },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: SOME },
+      { slice: { low_inclusive: "d" } value_type: GAP }
+    ]
+  },
+
+  # Zero input entries:
+  {
+    expected_entries: [
+      { slice: { low_inclusive: "" } value_type: GAP }
+    ]
+  },
+
+  # One input entry:
+  {
+    input_slices: [{ low_inclusive: "" }]
+    expected_entries: [
+      { slice: { low_inclusive: "" } value_type: SOME }
+    ]
+  },
+  {
+    input_slices: [{ low_inclusive: "" high_exclusive: "a" }]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" } value_type: GAP }
+    ]
+  },
+  {
+    input_slices: [{ low_inclusive: "b" }]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "b" } value_type: GAP },
+      { slice: { low_inclusive: "b" } value_type: SOME }
+    ]
+  },
+  {
+    input_slices: [{ low_inclusive: "a" high_exclusive: "b" }]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: GAP },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: SOME },
+      { slice: { low_inclusive: "b" } value_type: GAP }
+    ]
+  },
+
+  # Covering the entire key space:
+  {
+    input_slices: [
+      { low_inclusive: "" high_exclusive: "a" },
+      { low_inclusive: "a" high_exclusive: "b" },
+      { low_inclusive: "b" high_exclusive: "c" },
+      { low_inclusive: "c" high_exclusive: "d" },
+      { low_inclusive: "d" }
+    ]
+    expected_entries: [
+      { slice: { low_inclusive: "" high_exclusive: "a" } value_type: SOME },
+      { slice: { low_inclusive: "a" high_exclusive: "b" } value_type: SOME },
+      { slice: { low_inclusive: "b" high_exclusive: "c" } value_type: SOME },
+      { slice: { low_inclusive: "c" high_exclusive: "d" } value_type: SOME },
+      { slice: { low_inclusive: "d" } value_type: SOME }
+    ]
+  }
+]
+
+partial_slice_map_error_test_cases: [
+  {
+    input_slices: [
+      { low_inclusive: "a" high_exclusive: "d" },
+      { low_inclusive: "b" high_exclusive: "c" }
+    ]
+    expected_error: "Overlap between successive entries"
+  },
+  {
+    input_slices: [
+      { low_inclusive: "m" },
+      { low_inclusive: "p" }
+    ]
+    expected_error: "Only last entry may have Infinity upper bound"
+  }
+]

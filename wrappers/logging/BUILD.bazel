@@ -1,0 +1,52 @@
+load("@rules_scala//scala:scala.bzl", "scala_library", "scala_macro_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+scala_library(
+    name = "activity-context-factory",
+    srcs = [
+        "src/ActivityContextFactory.scala",
+    ],
+    deps = [
+        ":ctx",
+    ],
+)
+
+scala_library(
+    name = "ctx",
+    srcs = [
+        "src/Ctx.scala",
+    ],
+)
+
+scala_library(
+    name = "logging",
+    srcs = [
+        "src/AttributionContext.scala",
+        "src/AttributionContextTracing.scala",
+        "src/ConsoleLogging.scala",
+    ],
+    # Export scala-logging and slf4j to allow consumers to access the logger field.
+    exports = [
+        "@maven//:com_typesafe_scala_logging_scala_logging_2_12",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+    deps = [
+        "@maven//:com_typesafe_scala_logging_scala_logging_2_12",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)
+
+scala_macro_library(
+    name = "sourcecode",
+    srcs = ["src/SourceContext.scala"],
+    # Export sourcecode to allow consumers to use the File, Line, and FullName macros.
+    exports = [
+        "@maven//:com_lihaoyi_sourcecode_2_12",
+    ],
+    deps = [
+        "@maven//:com_lihaoyi_sourcecode_2_12",
+    ],
+)

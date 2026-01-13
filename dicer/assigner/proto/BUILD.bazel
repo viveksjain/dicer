@@ -1,0 +1,23 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_scala//scala_proto:scala_proto.bzl", "scala_proto_library")
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+proto_library(
+    name = "preferred_assigner_proto_library",
+    srcs = ["preferred_assigner.proto"],
+    deps = [
+        "//dicer/common/proto:common_proto",
+        "//wrappers/rpc:scalapb_proto",
+    ],
+)
+
+scala_proto_library(
+    name = "preferred_assigner_protolib",
+    visibility = ["//dicer:internal"],
+    deps = [":preferred_assigner_proto_library"],
+)

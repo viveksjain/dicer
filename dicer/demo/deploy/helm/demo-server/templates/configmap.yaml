@@ -1,0 +1,25 @@
+# ConfigMap for demo-server application configuration.
+#
+# This ConfigMap stores the JSON configuration that is mounted into the demo-server pod
+# and consumed via the DB_CONF environment variable.
+#
+# Configuration values:
+# - databricks.dicer.assigner.host: DNS name of the Dicer Assigner service
+# - When tls.enabled=true: Includes paths to TLS certificate, key, and CA files for mTLS
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "demo-common.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "databricks.dicer.assigner.host": "{{ .Values.assigner.host }}"
+      {{- /* Add comma before TLS config since it follows other JSON keys. */ -}}
+      {{- if .Values.tls.enabled }},
+      {{- include "demo-common.tls.configJson" . | nindent 6 }}
+      {{- end }}
+    }

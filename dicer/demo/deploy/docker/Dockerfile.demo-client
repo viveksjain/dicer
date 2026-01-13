@@ -1,0 +1,8 @@
+# Build the Docker image with JDK 17.
+FROM eclipse-temurin:17-jdk
+
+# Copy the pre-built Demo Client JAR into the container.
+COPY dicer/demo/demo-client.jar /app/demo-client.jar
+
+# Set entrypoint.
+ENTRYPOINT ["java", "-jar", "/app/demo-client.jar"]

@@ -1,0 +1,351 @@
+# proto-file: caching/util/test/proto/test_data.proto
+# proto-message: LossyEwmaCounterTestDataP
+
+invalid_cases: [
+  # Test plan: verify that constructing a LossyEwmaCounter with a non-positive half life seconds
+  # fails.
+  {
+    test_case_name: "validate_half_life_seconds_range_1"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { one_tenth_support: { } }
+      half_life_seconds: { value: 0 } # Invalid half life seconds
+    }
+    error_message_opt: "half life must be positive"
+  },
+  {
+    test_case_name: "validate_half_life_seconds_range_2"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { one_tenth_support: { } }
+      half_life_seconds: { value: -0.5 } # Invalid half life seconds
+    }
+    error_message_opt: "half life must be positive"
+  },
+  {
+    test_case_name: "validate_half_life_seconds_range_3"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { one_tenth_support: { } }
+      half_life_seconds: { value: -1 } # Invalid half life seconds
+    }
+    error_message_opt: "half life must be positive"
+  },
+  # Test plan: verify that constructing a LossyEwmaCounter with support not in (0, 1) fails.
+  {
+    test_case_name: "validate_support_range_1"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { value: 0 } # Invalid support
+      error: { one_tenth_support: { } }
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "support must be in (0, 1)"
+  },
+  {
+    test_case_name: "validate_support_range_2"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { value: 1 } # Invalid support
+      error: { one_tenth_support: { } }
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "support must be in (0, 1)"
+  },
+  {
+    test_case_name: "validate_support_range_3"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { value: 1.5 } # Invalid support
+      error: { one_tenth_support: { } }
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "support must be in (0, 1)"
+  },
+  # Test plan: verify that constructing a LossyEwmaCounter with error not in (0, 1) fails.
+  {
+    test_case_name: "validate_error_range_1"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { value: 0 } # Invalid error
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "error must be in (0, 1)"
+  },
+  {
+    test_case_name: "validate_error_range_2"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { value: 1 } # Invalid error
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "error must be in (0, 1)"
+  },
+  {
+    test_case_name: "validate_error_range_3"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { value: 1.5 } # Invalid error
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "error must be in (0, 1)"
+  },
+  # Test plan: verify that constructing a LossyEwmaCounter with error that is not signific
+  # smaller than support fails.
+  {
+    test_case_name: "validate_error_range_4"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { value: 0.1 }
+      error: { value: 0.2 } # Invalid error
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "error must be significantly less than support"
+  },
+  {
+    test_case_name: "validate_error_range_5"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { value: 0.5 }
+      error: { value: 0.5 } # Invalid error
+      half_life_seconds: { random: { } }
+    }
+    error_message_opt: "error must be significantly less than support"
+  }
+]
+
+valid_cases: [
+  # Test plan: Verify that if only a single key is recorded in the counter, then the counter
+  # always reports a contribution of 1.0 for that key (and that key alone) for arbitrary epoch
+  # durations, decay rates, and spacing/values for `incrementBy` calls. The contribution is never
+  # underestimated in this example because the key is never evicted.
+  {
+    test_case_name: "test_single_key_case"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { random: { } }
+      error: { one_tenth_support: { } }
+      half_life_seconds: { random: { } }
+    }
+    actions: [
+      {
+        repeated_action: {
+          repeat_count: 100
+          actions: [
+            # Repeatedly increment the counter for a single key.
+            { increment_by: { key: "key1" value: { random: { } } } },
+            # Verify that the key is always returned as a hot key
+            { check_hot_keys: { expected: [{ key: "key1" contribution: 1.0 }] } },
+            # Move the clock forward by 100 seconds after each increment-and-check.
+            { advance_clock: { ms: 100000 } }
+          ]
+        }
+      }
+    ]
+    repeated_count_opt: 10 # Run this test case 10 times
+  },
+
+  # Test plan: Verify that the counter ignores negative or zero increments. This is done by first
+  # incrementing two keys by the same positive value, then incrementing a third key by some zero
+  # or negative values, and verifying that the contributions of the first two keys are both 0.5
+  # after advancing the clock. After that, we increment the first key by some negative or zero
+  # values and verify that both keys' contributions remain unchanged (i.e. they are still 0.5).
+  {
+    test_case_name: "test_ignore_negative_and_zero_increments"
+    lossy_ewma_counter: {
+      start_time: { random: { } }
+      support: { value: 0.2 }
+      error: { one_tenth_support: { } }
+      half_life_seconds: { random: { } }
+    }
+    actions: [
+      # Increment "key1" and "key2" by the same positive value.
+      { one_time_action: { increment_by: { key: "key1" value: { value: 10 } } } },
+      { one_time_action: { increment_by: { key: "key2" value: { value: 10 } } } },
+      # Increment "key3" by some zero and negative values.
+      { one_time_action: { increment_by: { key: "key3" value: { value: 0 } } } },
+      { one_time_action: { increment_by: { key: "key3" value: { value: -5 } } } },
+      { one_time_action: { increment_by: { key: "key3" value: { value: -5 } } } },
+      # Advance the clock.
+      { one_time_action: { advance_clock: { ms: 2000 } } },
+      # Verify that both "key1" and "key2" are returned as the hot keys, with each contributes 0.5.
+      {
+        one_time_action: {
+          check_hot_keys: {
+            expected: [
+              { key: "key1" contribution: 0.5 },
+              { key: "key2" contribution: 0.5 }
+            ]
+          }
+        }
+      },
+      # Increment "key2" by some zero and negative values.
+      { one_time_action: { increment_by: { key: "key2" value: { value: -1000 } } } },
+      { one_time_action: { increment_by: { key: "key2" value: { value: 0 } } } },
+      # Advance the clock.
+      { one_time_action: { advance_clock: { ms: 1000 } } },
+      { one_time_action: { advance_clock: { ms: 1000 } } },
+      # Verify that the hot keys remain unchanged.
+      {
+        one_time_action: {
+          check_hot_keys: {
+            expected: [
+              { key: "key1" contribution: 0.5 },
+              { key: "key2" contribution: 0.5 }
+            ]
+          }
+        }
+      }
+    ]
+  },
+
+  # Test plan: Verify that the counter weights measurements according to the half life seconds.
+  # Verify this by using half life seconds = 0.5 and checking that the weight of measurements in
+  # the first epoch is a quarter of the weight of measurements in the second epoch. We do this by
+  # supplying measurements in each epoch for multiple keys and verifying that expected
+  # contributions are computed.
+  {
+    test_case_name: "test_weight_measurements"
+    lossy_ewma_counter: {
+      start_time: { unix_epoch_millis: 0 }
+      support: { value: 0.01 }
+      error: { value: 0.001 }
+      half_life_seconds: { value: 0.5 }
+    }
+    actions: [
+      # First epoch: a->10, b->20, c->50
+      { one_time_action: { increment_by: { key: "a" value: { value: 10 } } } },
+      { one_time_action: { advance_clock: { ms: 10 } } },
+      { one_time_action: { increment_by: { key: "b" value: { value: 20 } } } },
+      { one_time_action: { advance_clock: { ms: 20 } } },
+      { one_time_action: { increment_by: { key: "c" value: { value: 15 } } } },
+      { one_time_action: { advance_clock: { ms: 100 } } },
+      { one_time_action: { increment_by: { key: "c" value: { value: 35 } } } },
+      # Verify hot keys:
+      {
+        one_time_action: {
+          check_hot_keys: {
+            expected: [
+              { key: "a" contribution: 0.125 }, # 10 / 80
+              { key: "b" contribution: 0.25 }, # 20 / 80
+              { key: "c" contribution: 0.625 }  # (15+35) / 80
+            ]
+          }
+        }
+      },
+      # Second epoch: a->20, b->20, c->10
+      { one_time_action: { advance_clock: { ms: 1000 } } },
+      # a: 10 / 4 + 20 = 22.5
+      { one_time_action: { increment_by: { key: "a" value: { value: 20 } } } },
+      { one_time_action: { advance_clock: { ms: 20 } } },
+      # b: 20 / 4 + 25 = 30
+      { one_time_action: { increment_by: { key: "b" value: { value: 25 } } } },
+      { one_time_action: { advance_clock: { ms: 10 } } },
+      # c: 50 / 4 + 15 = 27.5
+      { one_time_action: { increment_by: { key: "c" value: { value: 15 } } } },
+      # total weight = 22.5 + 30 + 27.5 = 80
+      # Verify hot keys:
+      {
+        one_time_action: {
+          check_hot_keys: {
+            expected: [
+              { key: "a" contribution: 0.28125 }, # 22.5 / 80
+              { key: "b" contribution: 0.375 }, # 30 / 80
+              { key: "c" contribution: 0.34375 }  # 27.5 / 80
+            ]
+          }
+        }
+      }
+    ]
+  },
+
+  # Test plan: verify the stability of the counter by repeatedly incrementing the same keys by
+  # the same value and verifying that the contributions of the keys remain stable.
+  {
+    test_case_name: "test_lossy_ewma_counter_stability"
+    lossy_ewma_counter: {
+      start_time: { unix_epoch_millis: 0 }
+      support: { value: 0.01 }
+      error: { value: 0.001 }
+      half_life_seconds: { value: 0.5 }
+    }
+    actions: [
+      {
+        repeated_action: {
+          repeat_count: 2048
+          actions: [
+            # Repeatedly increment the counter for the same keys.
+            { increment_by: { key: "a" value: { value: 10 } } },
+            { increment_by: { key: "b" value: { value: 40 } } },
+            { increment_by: { key: "c" value: { value: 30 } } },
+            { increment_by: { key: "d" value: { value: 20 } } },
+            # Verify hot keys:
+            {
+              check_hot_keys: {
+                expected: [
+                  { key: "a" contribution: 0.1 }, # 10 / (10 + 20 + 30 + 40)
+                  { key: "b" contribution: 0.4 }, # 40 / (10 + 20 + 30 + 40)
+                  { key: "c" contribution: 0.3 }, # 30 / (10 + 20 + 30 + 40)
+                  { key: "d" contribution: 0.2 }  # 20 / (10 + 20 + 30 + 40)
+                ]
+              }
+            },
+            # Move the clock forward by 1 second after each increment-and-check.
+            { advance_clock: { ms: 1000 } }
+          ]
+        }
+      }
+    ]
+  },
+
+  # Test plan: Verify that LossyEwmaCounter correctly handles sum and amplification overflow by
+  # rescaling. Internally, LossyEwmaCounter maintains an "amplification" factor that is increased
+  # by a factor of 1/decay after every second. When a key is incremented by some value, that
+  # value is multiplied by the amplification factor and added to the total time-weighted sum.
+  # Eventually, the sum or the amplification factor overflows to `Double.PositiveInfinity` and
+  # the counter's weights need to be rescaled (see discussion of "Base epoch rescaling" in the
+  # code). This test case exercises both cases by causing a counter to advance by 2048 epochs
+  # (with halfLifeSeconds = 1), adding some hot keys, and verifying that they're correctly
+  # accounted for. We verify via internal metrics that rescaling occurred due both to amplification
+  # overflow and sum overflow. We expect both because the amplification factor
+  # should overflow if we increment after ~1024 epochs (since Double.MaxValue is ~2^1024), and
+  # the sum should overflow after slightly fewer epochs (since the incremented value is
+  # multiplied by the amplification factor).
+  {
+    test_case_name: "test_overflow_handling"
+    lossy_ewma_counter: {
+      start_time: { unix_epoch_millis: 0 }
+      support: { value: 0.01 }
+      error: { value: 0.001 }
+      half_life_seconds: { value: 0.5 }
+    }
+    actions: [
+      { one_time_action: { increment_by: { key: "a" value: { value: 10 } } } },
+      { one_time_action: { increment_by: { key: "b" value: { value: 30 } } } },
+      # Verify hot keys:
+      {
+        one_time_action: {
+          check_hot_keys: {
+            expected: [
+              { key: "a" contribution: 0.25 }, # 10 / (10 + 30)
+              { key: "b" contribution: 0.75 }   # 30 / (10 + 30)
+            ]
+          }
+        }
+      }
+    ]
+    repeated_count_opt: 2048 # Run this test case 2048 times
+    repeated_interval_ms_opt: 1000 # Advance the clock by 1 second between each increment.
+    expected_overflows_opt: true # Expect both amplification and sum overflows.
+  }
+]
+
+randomized_with_reference_case: {
+  requires_hardcoding: true
+}

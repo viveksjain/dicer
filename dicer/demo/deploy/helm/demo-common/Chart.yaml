@@ -1,0 +1,5 @@
+apiVersion: v2
+name: demo-common
+description: A Helm library chart with common templates for Dicer demo services
+type: library
+version: 0.1.0

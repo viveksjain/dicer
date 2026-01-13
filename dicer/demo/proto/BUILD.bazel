@@ -1,0 +1,20 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_scala//scala_proto:scala_proto.bzl", "scala_proto_library")
+
+package(
+    default_visibility = ["//dicer/demo:__subpackages__"],
+)
+
+proto_library(
+    name = "demo_proto_library",
+    srcs = ["demo.proto"],
+    deps = [
+        "//wrappers/rpc:scalapb_proto",
+    ],
+)
+
+scala_proto_library(
+    name = "demo_proto",
+    visibility = ["//visibility:public"],
+    deps = [":demo_proto_library"],
+)

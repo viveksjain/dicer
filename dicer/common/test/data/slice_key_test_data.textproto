@@ -1,0 +1,291 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceKeyTestDataP
+
+# Ordered list of high slice keys for testing.
+# Note: Some tests depend on this list including the minimum and maximum (infinity)
+# HighSliceKeys for test coverage. If this changes then those tests which rely on this
+# property must be updated.
+ordered_high_slice_keys: [
+  # Keys containing only 0 bytes sort first (ordered by length).
+  {
+    slice_key {
+      application_key: []
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  # Keys containing a single 1 byte sort next (ordered by most significant byte).
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [1]
+      slice_key_function: IDENTITY
+    }
+  },
+  # Zero padding for non-zero key.
+  {
+    slice_key {
+      application_key: [1, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [1, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [1, 0, 0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [1, 0, 0, 0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  # Examples with increasing prefixes and variable zero-padding.
+  {
+    slice_key {
+      application_key: [1, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [1, 2, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [1, 3, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [2]
+      slice_key_function: IDENTITY
+    }
+  },
+  # Examples where the long prefix is the same, but the suffix is different.
+  {
+    slice_key {
+      application_key: [2, 0, 0, 0, 0, 0, 0, 0, 0]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [2, 0, 0, 0, 0, 0, 0, 0, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [2, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+      slice_key_function: IDENTITY
+    }
+  },
+  {
+    slice_key {
+      application_key: [2, 0, 0, 0, 0, 0, 0, 0, 2]
+      slice_key_function: IDENTITY
+    }
+  },
+  # Infinity slice key (sorts last, after all regular keys)
+  {
+    infinity_slice_key { }
+  }
+]
+
+# Test cases for SliceKey toString method.
+to_string_test_cases: [
+  # MIN key.
+  {
+    slice_key {
+      application_key: []
+      slice_key_function: IDENTITY
+    }
+    expected_string: "\"\""
+  },
+  {
+    slice_key {
+      application_key: [72, 101, 108, 108, 111]  # "Hello" in UTF-8
+      slice_key_function: IDENTITY
+    }
+    expected_string: "Hello"
+  },
+  # FARM_HASH_FINGERPRINT_64 examples.
+  {
+    slice_key {
+      application_key: [72, 101, 108, 108, 111]  # "Hello" in UTF-8
+      slice_key_function: FARM_HASH_FINGERPRINT_64
+    }
+    expected_string: "0x87206b321e7cc8d5"
+  },
+  {
+    slice_key {
+      application_key: [70, 111, 111]  # "Foo" in UTF-8
+      slice_key_function: FARM_HASH_FINGERPRINT_64
+    }
+    expected_string: "0x19f3e313e51cd78a"
+  },
+  {
+    slice_key {
+      application_key: [70, 105, 108, 105]  # "Fili" in UTF-8
+      slice_key_function: FARM_HASH_FINGERPRINT_64
+    }
+    expected_string: "0x590de492bef412fc"
+  },
+  # Long value examples (big-endian 8-byte representations).
+  {
+    slice_key {
+      application_key: [255, 255, 255, 255, 255, 255, 255, 255]  # -1L
+      slice_key_function: IDENTITY
+    }
+    expected_string: "0xffffffffffffffff"
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 0]  # 0L
+      slice_key_function: IDENTITY
+    }
+    expected_string: "0x0000000000000000"
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 42]  # 42L
+      slice_key_function: IDENTITY
+    }
+    expected_string: "0x000000000000002a"
+  },
+  {
+    slice_key {
+      application_key: [8, 0, 0, 0, 0, 0, 0, 0]  # 0x0800000000000000L
+      slice_key_function: IDENTITY
+    }
+    expected_string: "0x0800000000000000"
+  },
+  # Successors.
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 0]  # 0L
+      slice_key_function: IDENTITY
+    }
+    is_successor: true
+    expected_string: "0x0000000000000000\\0"
+  },
+  {
+    slice_key {
+      application_key: [0, 0, 0, 0, 0, 0, 0, 42]  # 42L
+      slice_key_function: IDENTITY
+    }
+    is_successor: true
+    expected_string: "0x000000000000002a\\0"
+  }
+]

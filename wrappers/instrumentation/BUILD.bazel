@@ -1,0 +1,57 @@
+load("@rules_scala//scala:scala.bzl", "scala_library", "scala_test")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+scala_library(
+    name = "instrumentation",
+    srcs = [
+        "src/DebugHttpServer.scala",
+        "src/DebugStringServletRegistry.scala",
+        "src/HasDebugString.scala",
+    ],
+    deps = [
+        "//wrappers/logging",
+        "//wrappers/util:jsonutil",
+        "//wrappers/util:lock",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_lihaoyi_geny_2_12",
+        "@maven//:com_lihaoyi_scalatags_2_12",
+        "@maven//:io_opencensus_opencensus_contrib_grpc_metrics",
+        "@maven//:io_opencensus_opencensus_contrib_zpages",
+        "@maven//:org_scala_lang_modules_scala_xml_2_12",
+        "@maven//:org_scala_lang_scala_library",
+    ],
+)
+
+scala_test(
+    name = "zpages_server_test",
+    testonly = True,
+    srcs = [
+        "test/DebugHttpServerSuite.scala",
+    ],
+    deps = [
+        ":instrumentation",
+        "//wrappers/logging",
+        "//wrappers/util:databricks-test",
+        "//wrappers/util:lock",
+        "@maven//:org_scala_lang_scala_library",
+    ],
+)
+
+scala_library(
+    name = "scaffeine-cache-exporter",
+    srcs = [
+        "src/SCaffeineCacheInfoExporter.scala",
+    ],
+)
+
+scala_library(
+    name = "info-service",
+    srcs = ["src/InfoService.scala"],
+    deps = [
+        ":instrumentation",
+        "//wrappers/logging",
+    ],
+)

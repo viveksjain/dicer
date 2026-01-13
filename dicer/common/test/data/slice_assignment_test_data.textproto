@@ -1,0 +1,362 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceAssignmentTestDataP
+
+invariant_test_cases: [
+  # Empty assigned resources:
+  {
+    expected_error: "The assigned resources must be non-empty"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+    }
+  },
+  # Negative primary rate load:
+  {
+    expected_error: "must be non-negative"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      primary_rate_load_opt: -1.0
+    }
+  },
+  # Primary rate load is not a number:
+  {
+    expected_error: "must be a number"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      primary_rate_load_opt: NaN
+    }
+  },
+  # Infinity primary rate load:
+  {
+    expected_error: "must be finite"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      primary_rate_load_opt: inf
+    }
+  },
+  # Subslice annotation with an unassigned resource:
+  {
+    expected_error: "Subslice annotations must be to one of the resources that own the slice"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      subslice_annotations: [
+        {
+          resource: "APodNotAssignedToTheValidSliceAssignment"
+          slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 1
+        }
+      ]
+    }
+  },
+  # Subslice annotation with a generation newer than the slice assignment's generation:
+  {
+    expected_error: "Subslice annotations cannot have a newer generation"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      subslice_annotations: [
+        {
+          resource: "Pod0"
+          slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 2
+        }
+      ]
+    }
+  },
+  # Overlapping subslice annotations for the same resource:
+  {
+    expected_error: "must be ordered and disjoint"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      subslice_annotations: [
+        {
+          resource: "Pod0"
+          slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 1
+        },
+        {
+          resource: "Pod0"
+          slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 1
+        }
+      ]
+    }
+  },
+  # State transfer from same resource:
+  {
+    expected_error: "State transfer cannot be from and to the same resource [Pod0"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      subslice_annotations: [
+        {
+          resource: "Pod0"
+          slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 1
+          state_transfer: { id: 12 from_resource: "Pod0" }
+        }
+      ]
+    }
+  },
+  # Subslice annotation starts before slice:
+  {
+    expected_error: "Subslice annotations must be contained in slice"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      subslice_annotations: [
+        {
+          resource: "Pod0"
+          slice: { low_inclusive: "" high_exclusive: "Ori" }
+          generation_number: 1
+        }
+      ]
+    }
+  },
+  # Subslice annotation ends after slice:
+  {
+    expected_error: "must be contained in slice"
+    slice_assignment: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resources: ["Pod0"]
+      subslice_annotations: [
+        {
+          resource: "Pod0"
+          slice: { low_inclusive: "Nori" }
+          generation_number: 1
+        }
+      ]
+    }
+  }
+]
+
+proto_validity_test_cases: [
+  # Bad slices:
+  {
+    expected_error: "Low key must be less than high key"
+    invalid_proto: {
+      slice: { low_inclusive: "" high_exclusive: "" }
+      generation: { incarnation: 42 number: 1 }
+      resource_indices: [0, 1]
+    }
+  },
+  # Invalid generation:
+  {
+    expected_error: "Slice assignment must have non-empty generation"
+    invalid_proto: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      resource_indices: [0, 1]
+    }
+  },
+  # All resource indices out of range:
+  {
+    expected_error: "Resource index -1 out of range"
+    invalid_proto: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resource_indices: [-1, -2]
+    }
+  },
+  # Some resource indices out of range:
+  {
+    expected_error: "Resource index 2 out of range"
+    invalid_proto: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resource_indices: [0, 1, 2]
+    }
+  },
+
+  # The following are a few extra cases already covered in and picked from `invariant_test_cases`.
+  # We duplicate those cases here to make sure the slice assignment's proto de-serialization method
+  # is indeed verified by the class's internal pre-condition check (e.g. SliceAssignment.fromProto
+  # indeed calls into SliceAssignment.apply).
+
+  # Empty assigned resources:
+  {
+    expected_error: "The assigned resources must be non-empty"
+    invalid_proto: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+    }
+  },
+  # Overlapping subslice annotations:
+  {
+    expected_error: "must be ordered and disjoint"
+    invalid_proto: {
+      slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+      generation: { incarnation: 42 number: 1 }
+      resource_indices: [0]
+      subslice_annotations: [
+        {
+          resource_id: 0
+          subslice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 1
+        },
+        {
+          resource_id: 0
+          subslice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+          generation_number: 0
+        }
+      ]
+    }
+  }
+]
+
+round_trip_test_cases: [
+  {
+    slice: { low_inclusive: "" high_exclusive: "Nori" }
+    generation: { incarnation: 42 number: 90 }
+    resources: ["Pod1"]
+  },
+  {
+    slice: { low_inclusive: "" high_exclusive: "Nori" }
+    generation: { incarnation: 42 number: 90 }
+    resources: ["Pod1", "Pod2"]
+  },
+  {
+    slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+    generation: { incarnation: 43 number: 89 }
+    resources: ["Pod0"]
+  },
+  {
+    slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+    generation: { incarnation: 43 number: 89 }
+    resources: ["Pod1"]
+  },
+  {
+    slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+    generation: { incarnation: 43 number: 89 }
+    resources: ["Pod1", "Pod2", "Pod3", "Pod4"]
+  },
+  {
+    slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+    generation: { incarnation: 43 number: 56 }
+    resources: ["Pod2"]
+  },
+  {
+    slice: { low_inclusive: "Balin" }
+    generation: { incarnation: 43 number: 56 }
+    resources: ["Pod2", "Pod3", "Pod4"]
+  },
+  {
+    slice: { low_inclusive: "Balin" }
+    generation: { incarnation: 43 number: 56 }
+    resources: ["Pod0", "Pod3", "Pod4", "Pod5"]
+  },
+  {
+    slice: { low_inclusive: "" high_exclusive: "Nori" }
+    generation: { incarnation: 42 number: 90 }
+    resources: ["Pod1", "Pod2", "Pod3"]
+    subslice_annotations: [
+      {
+        resource: "Pod1"
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation_number: 90
+      },
+      {
+        resource: "Pod1"
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation_number: 58
+      },
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "" high_exclusive: "Fili" }
+        generation_number: 57
+        state_transfer: { id: 5 from_resource: "Pod1" }
+      },
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation_number: 89
+        state_transfer: { id: 6 from_resource: "Pod3" }
+      }
+    ]
+  },
+  {
+    slice: { low_inclusive: "" high_exclusive: "Nori" }
+    generation: { incarnation: 42 number: 90 }
+    resources: ["Pod1", "Pod2"]
+    subslice_annotations: [
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "" high_exclusive: "Nori" }
+        generation_number: 90
+        state_transfer: { id: 0 from_resource: "Pod0" }
+      }
+    ]
+  },
+  {
+    slice: { low_inclusive: "" high_exclusive: "Ori" }
+    generation: { incarnation: 42 number: 90 }
+    resources: ["Pod1", "Pod2", "Pod3", "Pod4"]
+    subslice_annotations: [
+      {
+        resource: "Pod4"
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation_number: 90
+      },
+      {
+        resource: "Pod4"
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation_number: 58
+      },
+      {
+        resource: "Pod3"
+        slice: { low_inclusive: "" high_exclusive: "Fili" }
+        generation_number: 57
+        state_transfer: { id: 11 from_resource: "Pod1" }
+      },
+      {
+        resource: "Pod3"
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation_number: 89
+        state_transfer: { id: 12 from_resource: "Pod4" }
+      },
+      {
+        resource: "Pod1"
+        slice: { low_inclusive: "" high_exclusive: "Ori" }
+        generation_number: 88
+        state_transfer: { id: 13 from_resource: "Pod2" }
+      },
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "" high_exclusive: "Balin" }
+        generation_number: 88
+        state_transfer: { id: 14 from_resource: "Pod0" }
+      },
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "Balin" high_exclusive: "Fili" }
+        generation_number: 87
+        state_transfer: { id: 15 from_resource: "Pod0" }
+      },
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "Fili" high_exclusive: "Nori" }
+        generation_number: 85
+        state_transfer: { id: 16 from_resource: "Pod0" }
+      },
+      {
+        resource: "Pod2"
+        slice: { low_inclusive: "Nori" high_exclusive: "Ori" }
+        generation_number: 84
+        state_transfer: { id: 17 from_resource: "Pod0" }
+      }
+    ]
+  }
+]

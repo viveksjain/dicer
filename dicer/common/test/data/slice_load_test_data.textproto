@@ -1,0 +1,321 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceLoadTestDataP
+
+invalid_cases: [
+  {
+    debug_name: "Negative primary rate load"
+    expected_error: "must be a number"
+    slice_load: {
+      primary_rate_load: nan
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Negative primary rate load"
+    expected_error: "must be non-negative"
+    slice_load: {
+      primary_rate_load: -1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Infinite primary rate load"
+    expected_error: "must be finite"
+    slice_load: {
+      primary_rate_load: inf
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Window high < window low"
+    expected_error: "High exclusive time must be >= low inclusive time"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 30
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Top key missing slice_key field"
+    expected_error: "must have a slice key"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      top_keys: [
+        {
+          # slice_key field is missing
+          underestimated_primary_rate_load: 0.5
+        }
+      ]
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Top key outside slice bounds (key >= high_exclusive)"
+    expected_error: "must be contained in slice"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "ccc"
+      }
+      top_keys: [
+        {
+          slice_key: "zzz"  # Higher than high_exclusive
+          underestimated_primary_rate_load: 0.5
+        }
+      ]
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Top key outside slice bounds (key < low_inclusive)"
+    expected_error: "must be contained in slice"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "ccc"
+        high_exclusive: "zzz"
+      }
+      top_keys: [
+        {
+          slice_key: "aaa"  # Lower than low_inclusive
+          underestimated_primary_rate_load: 0.5
+        }
+      ]
+      num_replicas: 1
+    }
+  },
+  {
+    debug_name: "Negative number of replicas"
+    expected_error: "must be positive"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      num_replicas: -1 # Negative number of replicas
+    }
+  },
+  {
+    debug_name: "Zero number of replicas"
+    expected_error: "must be positive"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      num_replicas: 0 # zero number of replicas
+    }
+  },
+  {
+    debug_name: "Top key with negative underestimated primary rate load"
+    expected_error: "must be non-negative"
+    slice_load: {
+      primary_rate_load: 1.0
+      window_low_inclusive_seconds: 10
+      window_high_exclusive_seconds: 20
+      slice: {
+        low_inclusive: "aaa"
+        high_exclusive: "zzz"
+      }
+      top_keys: [
+        {
+          slice_key: "ggg"  # Within slice bounds
+          underestimated_primary_rate_load: -0.5
+        }
+      ]
+      num_replicas: 1
+    }
+  }
+]
+
+round_tripping_cases: [
+  # Basic valid case with no top keys
+  {
+    primary_rate_load: 1.0
+    window_low_inclusive_seconds: 10
+    window_high_exclusive_seconds: 20
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    num_replicas: 1
+  },
+  # Valid case with top keys
+  {
+    primary_rate_load: 5.67
+    window_low_inclusive_seconds: 1000
+    window_high_exclusive_seconds: 2000
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    top_keys: [
+      {
+        slice_key: "www"  # Within slice bounds
+        underestimated_primary_rate_load: 0.5
+      },
+      {
+        slice_key: "mmm"  # Within slice bounds
+        underestimated_primary_rate_load: 1.23
+      }
+    ]
+    num_replicas: 3
+  },
+  # We currently don't verify that the top key load is < the total slice load.
+  {
+    primary_rate_load: 5.67
+    window_low_inclusive_seconds: 1000
+    window_high_exclusive_seconds: 2000
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    top_keys: [
+      {
+        slice_key: "ddd"  # Within slice bounds
+        underestimated_primary_rate_load: 101.0 # very high number
+      }
+    ]
+    num_replicas: 3
+  },
+  # Valid case with zero load
+  {
+    primary_rate_load: 0.0
+    window_low_inclusive_seconds: 500
+    window_high_exclusive_seconds: 600
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    top_keys: [
+      {
+        slice_key: "ccc"
+        underestimated_primary_rate_load: 0.0
+      }
+    ]
+    num_replicas: 1
+  },
+  # Valid case with equal window times (zero duration)
+  {
+    primary_rate_load: 10.5
+    window_low_inclusive_seconds: 1500
+    window_high_exclusive_seconds: 1500
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    num_replicas: 2
+  },
+  # Valid case with top key load greater than primary rate load
+  {
+    primary_rate_load: 512.28
+    window_low_inclusive_seconds: 1672531200  # 2023-01-01 00:00:00 UTC
+    window_high_exclusive_seconds: 1672617600  # 2023-01-02 00:00:00 UTC
+    slice: {
+      low_inclusive: "aa"
+      high_exclusive: "zz"
+    }
+    top_keys: [
+      {
+        slice_key: "yy"
+        underestimated_primary_rate_load: 1024.56  # Greater than primary_rate_load
+      }
+    ]
+    num_replicas: 10
+  },
+  # Valid case with key at slice boundary (low_inclusive)
+  {
+    primary_rate_load: 2.0
+    window_low_inclusive_seconds: 100
+    window_high_exclusive_seconds: 200
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    top_keys: [
+      {
+        slice_key: "aaa"  # Exactly at low_inclusive
+        underestimated_primary_rate_load: 1.0
+      }
+    ]
+    num_replicas: 1
+  },
+  # Valid case with key just before high_exclusive
+  {
+    primary_rate_load: 3.0
+    window_low_inclusive_seconds: 300
+    window_high_exclusive_seconds: 400
+    slice: {
+      low_inclusive: "aaa"
+      high_exclusive: "zzz"
+    }
+    top_keys: [
+      {
+        slice_key: "zzy"  # Just before high_exclusive
+        underestimated_primary_rate_load: 2.5
+      }
+    ]
+    num_replicas: 1
+  }
+]
+
+# Valid case with empty slice field (should be treated as the full slice)
+empty_slice_case: {
+  primary_rate_load: 1.0
+  window_low_inclusive_seconds: 10
+  window_high_exclusive_seconds: 20
+  # Empty slice should be treated as the full slice
+  num_replicas: 1
+}
+
+# Valid case without num_replicas field (should default to 1)
+empty_num_replicas_case: {
+  primary_rate_load: 1.5
+  window_low_inclusive_seconds: 50
+  window_high_exclusive_seconds: 100
+  slice: {
+    low_inclusive: "aaa"
+    high_exclusive: "zzz"
+  }
+  # num_replicas field is omitted - should default to 1
+}

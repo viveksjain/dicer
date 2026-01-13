@@ -1,0 +1,82 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SliceSetTestDataP
+
+canonicalization_test_cases: [
+  {
+    description: "Slices out of order"
+    input_slices: [
+      { low_inclusive: "30" high_exclusive: "40" },
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "15" high_exclusive: "25" }
+    ]
+    expected_output_slices: [
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "15" high_exclusive: "25" },
+      { low_inclusive: "30" high_exclusive: "40" }
+    ]
+  },
+  {
+    description: "Repeated Slices"
+    input_slices: [
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "30" high_exclusive: "40" },
+      { low_inclusive: "30" high_exclusive: "40" },
+      { low_inclusive: "30" high_exclusive: "40" },
+      { low_inclusive: "50" high_exclusive: "60" }
+    ]
+    expected_output_slices: [
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "30" high_exclusive: "40" },
+      { low_inclusive: "50" high_exclusive: "60" }
+    ]
+  },
+  {
+    description: "Contiguous Slices coalesced"
+    input_slices: [
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "10" high_exclusive: "20" },
+      { low_inclusive: "30" high_exclusive: "40" },
+      { low_inclusive: "40" high_exclusive: "50" },
+      { low_inclusive: "50" high_exclusive: "60" }
+    ]
+    expected_output_slices: [
+      { low_inclusive: "0" high_exclusive: "20" },
+      { low_inclusive: "30" high_exclusive: "60" }
+    ]
+  },
+  {
+    description: "Overlapping Slices coalesced"
+    input_slices: [
+      { low_inclusive: "10" high_exclusive: "30" },
+      { low_inclusive: "20" high_exclusive: "40" },
+      { low_inclusive: "30" high_exclusive: "50" },
+      { low_inclusive: "60" high_exclusive: "80" },
+      { low_inclusive: "60" high_exclusive: "90" },
+      { low_inclusive: "70" high_exclusive: "80" }
+    ]
+    expected_output_slices: [
+      { low_inclusive: "10" high_exclusive: "50" },
+      { low_inclusive: "60" high_exclusive: "90" }
+    ]
+  },
+  {
+    description: "Various issues"
+    input_slices: [
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "25" high_exclusive: "40" },
+      # Overlaps previous Slice:
+      { low_inclusive: "20" high_exclusive: "30" },
+      { low_inclusive: "50" high_exclusive: "60" },
+      # Subsumes 50 -- 60:
+      { low_inclusive: "45" high_exclusive: "65" },
+      # Repeated Slice:
+      { low_inclusive: "20" high_exclusive: "30" }
+    ]
+    expected_output_slices: [
+      { low_inclusive: "0" high_exclusive: "10" },
+      { low_inclusive: "20" high_exclusive: "40" },
+      { low_inclusive: "45" high_exclusive: "65" }
+    ]
+  }
+]

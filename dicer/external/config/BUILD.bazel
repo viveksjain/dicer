@@ -1,0 +1,23 @@
+
+package(
+    default_visibility = ["//dicer:internal"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["**"]),
+    visibility = ["//caching/oss:__pkg__"],
+)
+
+filegroup(
+    name = "target_config",
+    srcs = glob(["**/*.textproto"]),
+    visibility = ["//dicer:internal"],
+)
+
+filegroup(
+    name = "target_config_for_test",
+    srcs = glob(["**/*"]),
+    testonly = True,
+    visibility = ["//dicer/production/safeconfig:__pkg__"],
+)

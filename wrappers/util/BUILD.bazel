@@ -1,0 +1,138 @@
+load("@rules_scala//scala:scala.bzl", "scala_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+scala_library(
+    name = "databricks_main",
+    srcs = [
+        "src/DatabricksMain.scala",
+    ],
+    deps = [
+        ":jsonutil",
+        "//wrappers/conf:constants",
+        "//wrappers/conf:core",
+        "//wrappers/conf:project",
+        "//wrappers/instrumentation:info-service",
+        "//wrappers/logging",
+        "@maven//:com_typesafe_config",
+    ],
+)
+
+scala_library(
+    name = "reflection",
+    srcs = ["src/ReflectionUtils.scala"],
+)
+
+scala_library(
+    name = "lock",
+    srcs = ["src/Lock.scala"],
+)
+
+scala_library(
+    name = "shutdown-hook-manager",
+    srcs = [
+        "src/ShutdownHookManager.scala",
+    ],
+    deps = [
+        "//wrappers/logging:sourcecode",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_typesafe_scala_logging_scala_logging_2_12",
+        "@maven//:org_apache_hadoop_hadoop_common",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)
+
+scala_library(
+    name = "fakeclock",
+    srcs = ["test/FakeClock.scala"],
+    deps = [
+        "@maven//:com_google_code_findbugs_jsr305",
+    ],
+)
+
+scala_library(
+    name = "shared",
+    srcs = [
+        "src/InstrumentedScheduledThreadPoolExecutor.scala",
+    ],
+)
+
+scala_library(
+    name = "executor",
+    srcs = [
+        "src/AdvancedInstrumentedScheduledThreadPoolExecutor.scala",
+        "src/NamedExecutor.scala",
+    ],
+    exports = [
+        # Export for compatibility with internal code patterns.
+        ":shared",
+        # Export to make logging available to consumers.
+        "//wrappers/logging",
+    ],
+    deps = [
+        ":shared",
+        "//wrappers/logging",
+    ],
+)
+
+scala_library(
+    name = "databricks-test",
+    srcs = ["test/DatabricksTest.scala"],
+    exports = [
+        # Export scalatest and logging dependencies so that consumers can extend DatabricksTest and
+        # directly use the test() method (from AnyFunSuite), gridTest() (which uses Tag), and the
+        # protected logger field (Logger type).
+        "@maven//:com_typesafe_scala_logging_scala_logging_2_12",
+        "@maven//:org_slf4j_slf4j_api",
+        "@io_bazel_rules_scala_scalactic",
+        "@io_bazel_rules_scala_scalatest",
+        "@io_bazel_rules_scala_scalatest_compatible",
+        "@io_bazel_rules_scala_scalatest_core",
+        "@io_bazel_rules_scala_scalatest_funsuite",
+    ],
+    deps = [
+        "@io_bazel_rules_scala_scalactic",
+        "@io_bazel_rules_scala_scalatest",
+        "@io_bazel_rules_scala_scalatest_compatible",
+        "@io_bazel_rules_scala_scalatest_core",
+        "@io_bazel_rules_scala_scalatest_funsuite",
+        "@maven//:com_typesafe_scala_logging_scala_logging_2_12",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)
+
+scala_library(
+    name = "async_test_helpers",
+    srcs = ["test/AsyncTestHelpers.scala"],
+    exports = [
+        # Export scalatest dependencies so that consumers can extend AsyncTestHelpers and directly
+        # use the eventually() method.
+        "@io_bazel_rules_scala_scalactic",
+        "@io_bazel_rules_scala_scalatest",
+        "@io_bazel_rules_scala_scalatest_compatible",
+        "@io_bazel_rules_scala_scalatest_core",
+        "@io_bazel_rules_scala_scalatest_funsuite",
+    ],
+    deps = [
+        "@io_bazel_rules_scala_scalactic",
+        "@io_bazel_rules_scala_scalatest",
+        "@io_bazel_rules_scala_scalatest_compatible",
+        "@io_bazel_rules_scala_scalatest_core",
+        "@io_bazel_rules_scala_scalatest_funsuite",
+    ],
+)
+
+scala_library(
+    name = "jsonutil",
+    srcs = [
+        "src/DatabricksObjectMapper.scala",
+    ],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_module_jackson_module_scala_2_12",
+    ],
+)

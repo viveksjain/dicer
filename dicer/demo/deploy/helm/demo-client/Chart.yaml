@@ -1,0 +1,10 @@
+apiVersion: v2
+name: demo-client
+description: A Helm chart for Dicer Demo Client
+type: application
+version: 0.1.0
+appVersion: "1.0"
+dependencies:
+  - name: demo-common
+    version: 0.1.0
+    repository: file://../demo-common

@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package dicer.friend;
+
+
+import "scalapb.proto";
+
+option java_package = "com.databricks.api.proto.dicer.friend";
+option java_generate_equals_and_hash = true;
+option (scalapb.options) = {
+  flat_package: true,
+};
+
+// This file provides restricted access to internal Dicer protos, that are also needed for state
+// transfer purposes.
+
+// Range of keys in Dicer, e.g., Slices are assigned to Slicelets. It is of the form:
+// [low_inclusive, high_inclusive) with the infinity key being a special key.
+message SliceP {
+  optional bytes low_inclusive = 1;
+  optional bytes high_exclusive = 2; // If not present, it means the Infinity key.
+}

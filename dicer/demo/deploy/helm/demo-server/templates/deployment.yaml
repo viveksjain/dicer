@@ -1,0 +1,60 @@
+# Deployment for demo-server application.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "demo-common.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      labels:
+        {{- include "demo-common.podLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- include "demo-common.tls.volumeIfEnabled" . | nindent 6 }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- include "demo-common.tls.volumeMountIfEnabled" . | nindent 8 }}
+        ports:
+        {{- include "demo-common.containerPorts" . | nindent 8 }}
+        env:
+        # Environment variables needed to configure the Slicelet.
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_UID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: LOCATION
+          value: '{"kubernetes_cluster_uri": "{{ .Values.location.kubernetesClusterUri }}"}'
+        - name: DB_CONF
+          valueFrom:
+            # Load configuration from ConfigMap.
+            configMapKeyRef:
+              name: {{ .Values.service.name }}-config
+              key: config.json
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.livenessProbe.tcpSocket.port }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.readinessProbe.tcpSocket.port }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}

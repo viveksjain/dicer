@@ -1,0 +1,219 @@
+# proto-file: dicer/common/test/proto/test_data.proto
+# proto-message: SquidTestDataP
+
+invalid_squid_test_cases: [
+  {
+    squid {
+      creation_time_millis: 1680279132000
+      resource_uuid_high: 766285473972240939
+      resource_uuid_low: -6785983130110965961
+    }
+    expected_error: "URI must not be empty"
+  },
+  {
+    squid {
+      resource_address: ""
+      creation_time_millis: 1680279132000
+      resource_uuid_high: 766285473972240939
+      resource_uuid_low: -6785983130110965961
+    }
+    expected_error: "URI must not be empty"
+  },
+  {
+    squid {
+      resource_address: "malformed URI violating RFC 2396"
+      creation_time_millis: 1680279132000
+      resource_uuid_high: 766285473972240939
+      resource_uuid_low: -6785983130110965961
+    }
+    expected_error: "2396"
+  }
+]
+
+ordered_squids: [
+  {
+    resource_address: "a"
+    creation_time_millis: -9223372036854775808  # Long.MinValue
+    resource_uuid_high: 766285473972240939
+    resource_uuid_low: -6785983130110965961
+  },
+  {
+    resource_address: "a"
+    creation_time_millis: -1680279132000
+    resource_uuid_high: 766285473972240939
+    resource_uuid_low: -6785983130110965961
+  },
+  {
+    resource_address: "a"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: 766285473972240939
+    resource_uuid_low: -6785983130110965961
+  },
+  {
+    resource_address: "a"
+    creation_time_millis: 9223372036854775807  # Long.MaxValue
+    resource_uuid_high: 766285473972240939
+    resource_uuid_low: -6785983130110965961
+  },
+  {
+    resource_address: "b"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -2106651501482782815
+    resource_uuid_low: -6156578963892460947
+  },
+  {
+    resource_address: "c"
+    creation_time_millis: 47
+    resource_uuid_high: 3983016738639005061
+    resource_uuid_low: -6961605952103992816
+  },
+  {
+    resource_address: "c"
+    creation_time_millis: 47
+    resource_uuid_high: 4783377478446566759
+    resource_uuid_low: -6259518088101395143
+  },
+  {
+    resource_address: "http://foo.bar"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar/PATH2"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar/path1"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar/path1?param=1"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar/path1?param=2"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar/path2"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar:80"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "http://foo.bar:90"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  # Ports should be compared numerically rather than lexicographically, so 8080 comes after 90.
+  {
+    resource_address: "http://foo.bar:8080"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  # The `http::Uri` type in Rust has a special representation for standard schemes, so we make sure
+  # to test non-standard ones too.
+  {
+    resource_address: "nonstandardscheme://foo.bar"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  },
+  {
+    resource_address: "ssh://foo.bar"
+    creation_time_millis: 1680279132000
+    resource_uuid_high: -6034688085658549110
+    resource_uuid_low: -6209998268546655401
+  }
+]
+
+squid_equality_groups: [
+  {
+    squids: [
+      {
+        resource_address: "a"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      },
+      {
+        resource_address: "a"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      }
+    ]
+  },
+  {
+    squids: [
+      {
+        resource_address: "http://foo.bar"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      },
+      # Identical to the previous SQUID:
+      {
+        resource_address: "http://foo.bar"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      },
+      # Scheme comparison should be case-insensitive:
+      {
+        resource_address: "HTTP://foo.bar"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      },
+      # Authority comparison should be case-insensitive:
+      {
+        resource_address: "http://foo.BAR"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      },
+      {
+        resource_address: "http://FOO.BAR"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      }
+    ]
+  },
+  # The `http::Uri` type in Rust has a special representation for standard schemes in which they are
+  # canonicalized to lowercase, so we make sure to test non-standard ones too.
+  {
+    squids: [
+      {
+        resource_address: "nonstandardscheme://foo.bar"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      },
+      {
+        resource_address: "NONSTANDARDSCHEME://foo.bar"
+        creation_time_millis: 1680279132000
+        resource_uuid_high: -6034688085658549110
+        resource_uuid_low: -6209998268546655401
+      }
+    ]
+  }
+]

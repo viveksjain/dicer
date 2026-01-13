@@ -1,0 +1,730 @@
+syntax = "proto2";
+
+package dicer.test;
+
+
+import "dicer/common/proto/common.proto";
+import "dicer/friend/proto/friend.proto";
+import "scalapb.proto";
+
+option java_package = "com.databricks.dicer.common.test";;
+option java_generate_equals_and_hash = true;
+option (scalapb.options) = {
+  flat_package: true,
+  package_name: "com.databricks.dicer.common.test",
+};
+
+// Similar to DiffAssignmentP, but more convenient for specifying by hand in a
+// test data file. (For example, resources are specified by name rather than by
+// index.)
+message SimpleDiffAssignmentP {
+  message SimpleSliceAssignmentP {
+    optional friend.SliceP slice = 1;
+    optional GenerationP generation = 2;
+    repeated string resources = 3;
+    repeated SubsliceAnnotationP subslice_annotations = 4;
+
+    // OPTIONAL.
+    optional double primary_rate_load_opt = 5;
+  }
+
+  message SubsliceAnnotationP {
+    optional string resource = 1;
+    optional friend.SliceP slice = 2;
+    optional int64 generation_number = 5;
+    optional TransferP state_transfer = 4;
+
+    reserved 3;
+  }
+
+  message TransferP {
+    optional int32 id = 1;
+    optional string from_resource = 2;
+  }
+
+  optional bool is_consistent = 1;
+  optional GenerationP generation = 2;
+
+  // OPTIONAL. If not specified, then this is a full diff.
+  optional GenerationP partial_diff_generation = 3;
+
+  repeated SimpleSliceAssignmentP slice_assignments = 4;
+}
+
+message GenerationTestDataP {
+  // Test cases with invalid generation protos and expected parsing error messages.
+  repeated InvalidGenerationTestCaseP invalid_generation_test_cases = 1;
+  message InvalidGenerationTestCaseP {
+    // Description of the test case.
+    optional string description = 1;
+
+    // Invalid generation.
+    optional GenerationP generation = 2;
+
+    // The error message that should be returned when the generation is parsed.
+    optional string expected_error = 3;
+  }
+
+  // Test cases containing "non-canonical" proto representations and the expected corresponding
+  // canonical representations.
+  repeated CanonicalGenerationTestCaseP canonical_generation_test_cases = 2;
+  message CanonicalGenerationTestCaseP {
+    optional string description = 1;
+
+    // Input proto.
+    optional GenerationP generation = 2;
+
+    // The expected canonical generation emitted when roundtripping.
+    optional GenerationP expected_canonical_generation = 3;
+  }
+
+  // Numbers corresponding to loose incarnations.
+  repeated int64 loose_incarnation_numbers = 3;
+
+  // Numbers corresponding to strict incarnations.
+  repeated int64 strict_incarnation_numbers = 4;
+
+  // Sequence of generations in expected sort order.
+  repeated GenerationP ordered_generations = 5;
+
+  // Expected values for next loose incarnation given the current incarnation value.
+  map<int64, int64> expected_next_loose_incarnations = 6;
+
+  // Expected values for next strict incarnation given the current incarnation value.
+  map<int64, int64> expected_next_strict_incarnations = 7;
+
+  // Test cases verifying the expected debug string representation of generations.
+  repeated ToStringTestCaseP to_string_test_cases = 8;
+  message ToStringTestCaseP {
+    optional GenerationP generation = 1;
+    optional string expected_string = 2;
+  }
+}
+
+message SliceMapTestDataP {
+  // Test cases of trying to create SliceMaps with an invalid sequence of slices.
+  repeated ValidateCompleteSlicesTestCaseP validate_complete_slices_test_cases = 1;
+  message ValidateCompleteSlicesTestCaseP {
+    // The slices to specify when creating the SliceMap.
+    repeated friend.SliceP slices = 1;
+
+    // The error message that should be returned when trying to create the SliceMap.
+    optional string expected_error = 2;
+  }
+
+  // Test cases of taking the intersection of two SliceMaps.
+  repeated IntersectTestCaseP intersect_test_cases = 4;
+  message IntersectTestCaseP {
+    // An entry in the first input SliceMap.
+    message LeftEntryP {
+      optional friend.SliceP slice = 1;
+      optional string value = 2;
+    }
+
+    // An entry in the second input SliceMap.
+    message RightEntryP {
+      optional friend.SliceP slice = 1;
+      optional int32 value = 2;
+    }
+
+    // An expected entry in the output SliceMap.
+    message ExpectedEntryP {
+      optional friend.SliceP slice = 1;
+
+      // The index in `left_entries` of the entry that this intersection entry is linked to.
+      optional int32 left_index = 2;
+
+      // The index in `right_entries` of the entry that this intersection entry is linked to.
+      optional int32 right_index = 3;
+    }
+
+    repeated LeftEntryP left_entries = 1;
+    repeated RightEntryP right_entries = 2;
+    repeated ExpectedEntryP expected_intersection_entries = 3;
+  }
+
+  // Test cases of SliceMaps with gaps in the key space.
+  repeated PartialSliceMapTestCaseP partial_slice_map_test_cases = 2;
+  message PartialSliceMapTestCaseP {
+    // An entry that's expected to exist in the resulting SliceMap.
+    message ExpectedEntryP {
+      optional friend.SliceP slice = 1;
+      optional ValueTypeP value_type = 2;
+    }
+
+    // Indicates whether an entry in the resulting SliceMap is expected to be a regular entry or a
+    // gap entry.
+    enum ValueTypeP {
+      VALUE_TYPE_P_UNSPECIFIED = 0;
+      SOME = 1;
+      GAP = 2;
+    }
+
+    // The slices that are included when creating the SliceMap.
+    repeated friend.SliceP input_slices = 1;
+
+    // The entries that are expected to exist in the resulting SliceMap, including gap entries.
+    repeated ExpectedEntryP expected_entries = 2;
+  }
+
+  // Test cases of attempting to create invalid partial SliceMaps.
+  repeated PartialSliceMapErrorTestCaseP partial_slice_map_error_test_cases = 3;
+  message PartialSliceMapErrorTestCaseP {
+    repeated friend.SliceP input_slices = 1;
+    optional string expected_error = 2;
+  }
+}
+
+message SliceletTestDataP {
+  // Test cases of generating Slicelet debug names.
+  repeated SliceletDebugNameTestCaseP slicelet_debug_name_test_cases = 1;
+  message SliceletDebugNameTestCaseP {
+    // The hostname to feed into the debug name logic.
+    optional string hostname = 1;
+
+    // The expected suffix in the resulting debug name (after "S{number}-").
+    optional string expected_debug_name_suffix = 2;
+  }
+}
+
+message SliceSetTestDataP {
+  // Test cases for SliceSet canonicalization.
+  repeated CanonicalizationTestCaseP canonicalization_test_cases = 1;
+  message CanonicalizationTestCaseP {
+    optional string description = 1;
+    repeated friend.SliceP input_slices = 2;
+    repeated friend.SliceP expected_output_slices = 3;
+  }
+}
+
+message SquidTestDataP {
+  // Test cases with invalid SQUID protos and expected parsing error messages.
+  repeated InvalidSquidTestCaseP invalid_squid_test_cases = 1;
+  message InvalidSquidTestCaseP {
+    // Invalid SQUID.
+    optional SquidP squid = 1;
+
+    // The error message that should be returned when the SQUID is parsed.
+    optional string expected_error = 2;
+  }
+
+  // Sequence of SQUIDs in expected sort order.
+  repeated SquidP ordered_squids = 2;
+
+  // Groups of SQUIDs that should be considered equal. SQUIDs in different groups should not be
+  // considered equal.
+  repeated EqualityGroupP squid_equality_groups = 3;
+  message EqualityGroupP {
+    repeated SquidP squids = 1;
+  }
+}
+
+message TargetTestDataP {
+  // Valid identifiers that can be used as target names.
+  repeated string valid_target_names = 1;
+
+  // Invalid identifiers that cannot be used as target names.
+  repeated string invalid_target_names = 2;
+
+  // Test cases for invalid Kubernetes cluster URIs.
+  repeated InvalidUriTestCaseP invalid_uri_test_cases = 3;
+  message InvalidUriTestCaseP {
+    optional string description = 1;
+    optional string cluster_uri = 2;
+    optional string expected_error_message = 3;
+  }
+
+  // Valid identifiers that can be used as app target names.
+  repeated string valid_app_target_names = 4;
+
+  // Invalid identifiers that cannot be used as app target names.
+  repeated string invalid_app_target_names = 5;
+
+  // Valid identifiers that can be used as app target instance IDs.
+  repeated string valid_instance_ids = 6;
+
+  // Invalid identifiers that cannot be used as app target instance IDs.
+  repeated string invalid_instance_ids = 7;
+}
+
+message DiffAssignmentTestDataP {
+  // Test cases for validation of the DiffAssignment invariants.
+  repeated InvariantValidityTestCaseP invariant_validity_test_cases = 1;
+  message InvariantValidityTestCaseP {
+    optional string expected_error = 1;
+    optional SimpleDiffAssignmentP diff_assignment = 2;
+  }
+
+  // Test cases for validating that a DiffAssignmentP can be converted to the
+  // native DiffAssignment representation and back.
+  repeated SimpleDiffAssignmentP round_trip_test_cases = 2;
+
+  // Test cases for retrieving the diff assignment's assigned resources.
+  repeated AssignedResourcesTestCaseP assigned_resources_test_cases = 3;
+  message AssignedResourcesTestCaseP {
+    optional SimpleDiffAssignmentP diff_assignment = 1;
+    repeated string expected_assigned_resources = 2;
+  }
+
+  // A valid diff assignment to use as the base for each of
+  // `from_proto_validity_test_cases`.
+  optional SimpleDiffAssignmentP valid_diff_assignment = 4;
+
+  // Test cases for DiffAssignmentWithReplicas.fromProto errors.
+  repeated FromProtoValidityTestCaseP from_proto_validity_test_cases = 5;
+  message FromProtoValidityTestCaseP {
+    message IndexListP {
+      repeated int32 indexes = 1;
+    }
+
+    message SliceGenerationChangeP {
+      optional int32 slice_index = 1;
+      optional GenerationP new_generation = 2;
+    }
+
+    message SliceResourcesChangeP {
+      optional int32 slice_index = 1;
+      repeated int32 new_resource_indices = 2;
+    }
+
+    // Specifies a transformation to apply to `valid_diff_assignment` to form an
+    // invalid diff assignment proto for use in this test case.
+    oneof transformation {
+      // Clears the generation field.
+      bool clear_generation = 1;
+
+      // Replaces the current `resources` list with the elements of the list at
+      // the given indexes in the given order.
+      IndexListP select_resources = 2;
+
+      // Replaces the current `slice_assignments` list with the elements of the
+      // list at the given indexes in the given order.
+      IndexListP select_slice_assignments = 3;
+
+      // Replaces the generation for the slice assignment at the given index.
+      SliceGenerationChangeP alter_slice_generation = 4;
+
+      // Replaces the resources assigned to the slice at the given index.
+      SliceResourcesChangeP alter_slice_resources = 6;
+    }
+
+    optional string expected_error = 5;
+  }
+}
+
+message AssignmentTestDataP {
+  // Corresponds to the enum by the same name in Assignment.scala.
+  enum DiffUnusedP {
+    DIFF_UNUSED_P_UNSPECIFIED = 0;
+    INCONSISTENCY = 1;
+    TOO_STALE_DIFF = 2;
+    DIFF_MATCHES_KNOWN = 3;
+    NO_KNOWN = 4;
+    TOO_STALE_KNOWN = 5;
+  }
+
+  // Test cases for round-tripping with full diffs.
+  repeated SimpleDiffAssignmentP full_diff_round_trip_test_cases = 1;
+
+  // Test cases for round-tripping with partial diffs.
+  repeated SimpleDiffAssignmentP partial_diff_round_trip_test_assignments = 2;
+
+  // Test cases for where the supplier of a diff believes that an assignment is in a non-loose
+  // incarnation but the recipient believes that it is loose.
+  optional FromDiffWithLooseIncarnationDataP from_diff_with_loose_incarnation_data = 3;
+  message FromDiffWithLooseIncarnationDataP {
+    // The loose incarnations to test with.
+    repeated int64 loose_incarnations = 1;
+
+    optional SimpleDiffAssignmentP initial_assignment = 2;
+    optional SimpleDiffAssignmentP next_assignment = 3;
+  }
+
+  // fromDiff failure test cases.
+  repeated FromDiffFailureTestCaseP from_diff_failure_test_cases = 4;
+  message FromDiffFailureTestCaseP {
+    optional SimpleDiffAssignmentP known_assignment = 1;
+    optional SimpleDiffAssignmentP diff = 2;
+
+    oneof expected_failure {
+      DiffUnusedP expected_diff_unused = 3;
+      string expected_error = 4;
+    }
+  }
+
+  // Test case for converting an assignment to a diff with a higher diff generation, which should
+  // fail.
+  optional ToDiffWithHigherDiffGenerationTestCaseP to_diff_with_higher_diff_generation_test_case = 5;
+  message ToDiffWithHigherDiffGenerationTestCaseP {
+    optional SimpleDiffAssignmentP assignment = 1;
+    optional GenerationP diff_generation = 2;
+    optional string expected_error = 3;
+  }
+
+  // Test cases for `isAssignedKey`.
+  repeated IsAssignedKeyTestCaseP is_assigned_key_test_cases = 6;
+  message IsAssignedKeyTestCaseP {
+    // An `isAssignedKey` call to perform and the expected result.
+    message CallP {
+      optional string slice_key = 1;
+      optional string resource = 2;
+      optional string resource_salt = 3;
+      optional bool expected_result = 4;
+    }
+
+    optional SimpleDiffAssignmentP assignment = 1;
+    repeated CallP calls = 2;
+  }
+
+  // Test cases for `getSliceSetForResource`.
+  repeated GetSliceSetForResourceTestCaseP get_slice_set_for_resource_test_cases = 7;
+  message GetSliceSetForResourceTestCaseP {
+    // A resource to call the method for, and its expected assigned slices.
+    message CallP {
+      optional string resource = 1;
+      optional string resource_salt = 2;
+      repeated friend.SliceP expected_slices = 3;
+    }
+
+    optional SimpleDiffAssignmentP assignment = 1;
+    repeated CallP calls = 2;
+  }
+
+  // Test cases for `getAssignedSliceAssignments`.
+  repeated GetAssignedSliceAssignmentsTestCaseP get_assigned_slice_assignments_test_cases = 8;
+  message GetAssignedSliceAssignmentsTestCaseP {
+    // The assignment to test
+    optional SimpleDiffAssignmentP assignment = 1;
+
+    // A resource to call the method for, and its expected assigned slice assignments
+    message CallP {
+      optional string resource = 1;
+      repeated SimpleDiffAssignmentP.SimpleSliceAssignmentP expected_slice_assignments = 2;
+    }
+
+    repeated CallP calls = 2;
+  }
+}
+
+message SliceAssignmentTestDataP {
+  // Test cases for validation of the SliceAssignment invariants.
+  repeated InvariantTestCaseP invariant_test_cases = 1;
+  message InvariantTestCaseP {
+    optional string expected_error = 1;
+    optional SimpleDiffAssignmentP.SimpleSliceAssignmentP slice_assignment = 2;
+  }
+
+  // Test cases for validation of SliceAssignment proto validity.
+  //
+  // These test cases are only testable with protos and not covered in `invariant_test_cases`.
+  repeated ProtoValidityTestCaseP proto_validity_test_cases = 2;
+  message ProtoValidityTestCaseP {
+    optional string expected_error = 1;
+    optional DiffAssignmentP.SliceAssignmentP invalid_proto = 2;
+  }
+
+  // Test cases for verifying that slice assignments can round trip through the proto
+  // representation.
+  repeated SimpleDiffAssignmentP.SimpleSliceAssignmentP round_trip_test_cases = 3;
+}
+
+message TransferTestDataP {
+  // Test cases for calling `Transfer.fromProto` with an invalid proto.
+  repeated ProtoValidityTestCaseP proto_validity_test_cases = 1;
+  message ProtoValidityTestCaseP {
+    optional string expected_error = 1;
+    optional DiffAssignmentP.TransferP transfer = 2;
+  }
+}
+
+message SliceLoadTestDataP {
+  // Test cases for calling `SliceLoad.fromProto` with an invalid proto.
+  repeated ProtoValidityTestCaseP invalid_cases = 1;
+
+  // Test cases for verifying that SliceLoad can round trip through the proto representation.
+  // This implies that the SliceLoad proto in each case is valid.
+  repeated ClientRequestP.SliceletDataP.SliceLoadP round_tripping_cases = 2;
+
+  // Test case for verifying that a SliceLoad proto with empty slice is valid and represents
+  // the full slice.
+  optional ClientRequestP.SliceletDataP.SliceLoadP empty_slice_case = 3;
+
+  // Test case for verifying that a SliceLoad proto with empty num_replicas is valid and represents
+  // 1 replica.
+  optional ClientRequestP.SliceletDataP.SliceLoadP empty_num_replicas_case = 4;
+
+  message ProtoValidityTestCaseP {
+    optional string expected_error = 1;
+    optional ClientRequestP.SliceletDataP.SliceLoadP slice_load = 2;
+    optional string debug_name = 3; // Debug name to use in the error message.
+  }
+}
+
+message SliceletDataTestDataP {
+  // Test cases for verifying that SliceletData can round trip through the proto representation.
+  // This implies that the SliceletData is valid.
+  repeated ClientRequestP.SliceletDataP round_tripping_cases = 1;
+}
+
+message SliceletLoadAccumulatorTestDataP {
+
+  // Test cases for verifying invalid operations on SliceletLoadAccumulator.
+  repeated InvalidCaseP invalid_cases = 1;
+
+  // Test cases for verifying the functionality of SliceletLoadAccumulator.
+  repeated ValidCaseP valid_cases = 2;
+
+  message InvalidCaseP {
+    optional string name = 1; // Test name to aid debugging.
+    optional string expected_error = 2; // Expected error message.
+    optional IncrementPrimaryLoadP action = 3; // The action to perform that is expected to fail.
+  }
+
+  message ValidCaseP {
+    optional string name = 1; // Test name to aid debugging.
+    repeated ActionP actions = 2; // The actions to perform in order.
+  }
+
+  message ActionP {
+    oneof action {
+      IncrementPrimaryLoadP increment_primary_load = 1;
+      UpdateMetricsP update_metrics = 2;
+      AssertHistogramBucketEqualsP histogram_bucket_check = 3;
+      AdvanceClockP advance_clock = 4;
+      ChangeAssignmentP change_assignment = 5;
+      CheckUnattributedLoadP check_unattributed_load = 6;
+      CheckAttributedLoadsP check_attributed_loads = 7;
+    }
+  }
+
+  // Increments the primary load for the given key by `value`. Key can be either an int64 or bytes.
+  // Empty indicates SliceKey.MIN. We allow int64 keys to simplify test data specification in
+  // histogram value checks.
+  message IncrementPrimaryLoadP {
+    oneof increment_by_key {
+      int64 key = 1;
+      bytes bytes_key = 3;
+    }
+    optional int32 value = 2;
+  }
+
+  // Update the metrics.
+  message UpdateMetricsP {}
+
+  // Asserts that the value of load distribution histogram bucket for the given `le` matches
+  // the `expected` value.
+  message AssertHistogramBucketEqualsP {
+    optional string debug_msg = 1; // Debug message to output in case of failure.
+    optional int32 bucket_index = 2; // The index of the bucket to check.
+    optional int64 expected = 3;
+  }
+
+  // Advances the fake clock by 1 second. Currently, tests always advance the clock by 1 second,
+  // so there is no `advance_by` field.
+  message AdvanceClockP {}
+
+  // Changes the assignment for the current squid.
+  message ChangeAssignmentP {
+    repeated SimpleDiffAssignmentP.SimpleSliceAssignmentP new_assignment = 1;
+    optional GenerationP generation = 2;
+    optional string current_squid = 3;
+  }
+
+  // Checks that the unattributed load matches the expectation.
+  message CheckUnattributedLoadP {
+    // Required: a debug message to output in case of failure.
+    optional string debug_msg = 1;
+
+    // Optional: expect an exact value, or None to skip the check.
+    optional double expected_value = 2;
+
+    // Optional: expect the unattributed load decays (lower than the previous value).
+    optional bool expected_decay = 3;
+
+    // Optional: expect the unattributed load counter to be some specific value.
+    optional int64 expected_counter_value = 4;
+  }
+
+  // Checks that the attributed loads match the expectation.
+  message CheckAttributedLoadsP {
+    // Required: a debug message to output in case of failure.
+    optional string debug_msg = 1;
+
+    // Optional: expect the exact match, or None to skip the check.
+    repeated ClientRequestP.SliceletDataP.SliceLoadP expected_loads = 2;
+
+    // Optional: expect the size of the attributed loads to match the given size.
+    optional int64 expected_size = 3;
+
+    // Optional: expect the assigned slices to match the specified info.
+    repeated ExpectedSliceInfoP expected_slice_info = 4;
+
+    // Optional: expect the TOTAL attributed load decays (lower than the previous value).
+    optional bool expected_decay = 5;
+
+    // Optional: expect the TOTAL attributed load counter to be some specific value.
+    optional int64 expected_counter_value = 6;
+  }
+
+  // Expected slice info for the attributed loads.
+  message ExpectedSliceInfoP {
+    // Optional: expect the exact match of slices in the attributed loads.
+    optional friend.SliceP slice = 1;
+
+    // Optional: expect the primary load to be approximately equal to the given value (allowing a
+    // 0.1 margin of error).
+    optional double approximate_primary_load = 2;
+
+    // Optional: expect the match on top slice keys (ignoring the ordering).
+    repeated bytes top_slice_keys = 3;
+  }
+}
+
+message ClientRequestTestDataP {
+
+  // Test cases for calling `ClientRequest.fromProto` with an invalid proto.
+  repeated InvalidClientRequestTestCaseP invalid_cases = 1;
+
+  // Test cases for verifying that ClientRequest can round trip through the proto representation.
+  repeated ClientRequestP round_tripping_cases = 2;
+
+  message InvalidClientRequestTestCaseP {
+    // Name of the test case, logically required.
+    optional string case_name = 1;
+
+    // The invalid client request proto.
+    optional ClientRequestP client_request = 2;
+
+    // The expected parsing error message, logically required.
+    optional string expected_error_message = 3;
+  }
+
+}
+
+message ClientResponseTestDataP {
+
+  // Test cases for calling `ClientResponse.fromProto` with an invalid proto.
+  repeated InvalidClientResponseTestCaseP invalid_cases = 1;
+
+  // Test cases for verifying that ClientResponse can round trip through the proto representation.
+  repeated RoundTrippingTestCaseP round_tripping_cases = 2;
+
+  message InvalidClientResponseTestCaseP {
+    // Name of the test case, logically required.
+    optional string case_name = 1;
+
+    // The invalid client response proto.
+    optional ClientResponseP client_response = 2;
+
+    // The expected parsing error message, logically required.
+    optional string expected_error_message = 3;
+  }
+
+  message RoundTrippingTestCaseP {
+    // Name of the test case, logically required.
+    optional string case_name = 1;
+
+    // The client response proto to round trip.
+    optional ClientResponseP client_response = 2;
+  }
+}
+
+// Test data for SliceKey-related tests that need to be shared across languages.
+message SliceKeyTestDataP {
+
+  // A HighSliceKey can be either a regular SliceKey or the InfinitySliceKey.
+  message HighSliceKeyP {
+
+    // The transformation to apply to the application key when creating a SliceKey.
+    enum SliceKeyFunctionP {
+      SLICE_KEY_FUNCTION_P_UNSPECIFIED = 0;
+      IDENTITY = 1;
+      FARM_HASH_FINGERPRINT_64 = 2;
+    }
+
+    // Represents a SliceKey.
+    message SliceKeyP {
+      // Application key integers, interpreted as bytes.
+      repeated int32 application_key = 1;
+
+      // The SliceKeyFunction to apply to the application key.
+      optional SliceKeyFunctionP slice_key_function = 2;
+    }
+
+    // Represents the InfinitySliceKey.
+    message InfinitySliceKeyP {}
+
+    oneof key {
+      SliceKeyP slice_key = 1;
+      InfinitySliceKeyP infinity_slice_key = 2;
+    }
+  }
+
+  message ToStringTestCaseP {
+    optional HighSliceKeyP.SliceKeyP slice_key = 1;
+
+    // Whether this key is a successor of `slice_key`.
+    optional bool is_successor = 3;
+
+    // The expected toString result.
+    optional string expected_string = 4;
+  }
+
+  // A collection HighSliceKeys, ordered in increasing order.
+  repeated HighSliceKeyP ordered_high_slice_keys = 1;
+
+  // Test cases verifying the expected toString value of SliceKeys.
+  repeated ToStringTestCaseP to_string_test_cases = 2;
+}
+
+// Test data for verifying the expected non-fatal target mismatch behavior.
+message FatalTargetMismatchTestDataP {
+
+  message TestCaseP {
+    optional string description = 1;
+    optional ClientRequestP.TargetP target1 = 2;
+    optional ClientRequestP.TargetP target2 = 3;
+  }
+
+  // Test cases where the targets are considered fatally mismatched.
+  repeated TestCaseP fatally_mismatched_test_cases = 1;
+
+  // Test cases where the targets are matched or considered non-fatal mismatched.
+  repeated TestCaseP matched_or_non_fatal_mismatched_test_cases = 2;
+}
+
+/** Test data for ResourceAddress tests. */
+message ResourceAddressTestDataP {
+  /**
+   * Unsupported URI test cases. Each case specifies a URI that is valid but unsupported,
+   * which should cause ResourceAddress construction to throw IllegalArgumentException with
+   * the specified error message.
+   */
+  repeated UnsupportedResourceAddressUriP unsupported_uri_cases = 1;
+
+  /**
+   * URIs in increasing order. ResourceAddress instances constructed from these URIs should sort in
+   * the same order.
+   */
+  repeated string ordered_uris = 2;
+
+  /**
+   * URIs within each group should produce the same ResourceAddress instance; URIs from different
+   * groups should produce different instances.
+   */
+  repeated EqualityGroupP equality_groups = 3;
+
+  /** An unsupported URI case with its expected error message. */
+  message UnsupportedResourceAddressUriP {
+    /** The unsupported URI string. It must be a valid URI string. */
+    optional string uri = 1;
+
+    /** The expected error message when attempting to construct a ResourceAddress. */
+    optional string expected_error_message = 2;
+  }
+
+  /** A group of URIs that produce the same ResourceAddress instance. */
+  message EqualityGroupP {
+    repeated string uris = 1;
+  }
+}

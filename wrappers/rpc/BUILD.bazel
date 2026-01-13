@@ -1,0 +1,160 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_scala//scala:scala.bzl", "scala_library", "scala_test")
+load("@rules_scala//scala_proto:scala_proto.bzl", "scala_proto_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+# Error handling components
+scala_library(
+    name = "error_code",
+    srcs = ["src/ErrorCode.scala"],
+)
+
+scala_library(
+    name = "error_code_utils",
+    srcs = ["src/ErrorCodeUtils.scala"],
+    deps = [
+        ":error_code",
+        ":rpc_exceptions",
+        "@scala_proto_rules_grpc_api",
+    ],
+)
+
+scala_library(
+    name = "rpc_exceptions",
+    srcs = ["src/DatabricksServiceException.scala"],
+    deps = [
+        ":error_code",
+    ],
+)
+
+# Provides ScalaPB compatibility shims (RichMessage) for OSS ScalaPB 1.0
+scala_library(
+    name = "rich_scalapb",
+    srcs = ["src/RichScalaPB.scala"],
+    deps = [
+        "@com_google_protobuf_protobuf_java",
+        "@scala_proto_rules_scalapb_runtime",
+    ],
+)
+
+# Service identity and context components
+scala_library(
+    name = "service_identity",
+    srcs = ["src/ServiceIdentity.scala"],
+)
+
+scala_library(
+    name = "rpc_context",
+    srcs = [
+        "src/HttpRequestInfo.scala",
+        "src/RPCContext.scala",
+    ],
+    deps = [
+        ":service_identity",
+    ],
+)
+
+# SSL/TLS components
+scala_library(
+    name = "rpc_ssl",
+    srcs = ["src/SslArguments.scala"],
+)
+
+scala_library(
+    name = "rpc_tls",
+    srcs = [
+        "src/TLSOptions.scala",
+        "src/TLSOptionsMigration.scala",
+    ],
+    deps = [
+        ":rpc_ssl",
+        # TLSOptions uses gRPC's transport-independent TLS API
+        # (TlsChannelCredentials, TlsServerCredentials).
+        "@scala_proto_rules_grpc_api",
+    ],
+)
+
+scala_library(
+    name = "rpc_tls_jetcd",
+    srcs = [
+        "src/JetcdTLS.scala",
+    ],
+    deps = [
+        ":rpc_tls",
+        "@maven//:io_etcd_jetcd_core",
+    ],
+)
+
+# Server components
+scala_library(
+    name = "rpc_server",
+    srcs = ["src/DatabricksServerWrapper.scala"],
+    deps = [
+        "//wrappers/util:lock",
+        "@scala_proto_rules_grpc_api",
+    ],
+)
+
+# HTTP Headers
+scala_library(
+    name = "headers",
+    srcs = ["src/Headers.scala"],
+)
+
+# Armeria readiness probe tracker
+scala_library(
+    name = "readiness_probe_tracker",
+    srcs = ["armeria/ReadinessProbeTracker.scala"],
+)
+
+# Armeria HTTP client components
+scala_library(
+    name = "client",
+    srcs = [
+        "src/HttpMethod.scala",
+        "src/HttpRequest.scala",
+        "src/RequestHeaders.scala",
+    ],
+    deps = [":rpc_context"],
+)
+
+# Testing utilities
+scala_library(
+    name = "rpc_testing",
+    testonly = True,
+    srcs = [
+        "test/JettyTestRPCContext.scala",
+        "test/TestSslArguments.scala",
+        "test/TestTLSOptions.scala",
+    ],
+    deps = [
+        ":rpc_context",
+        ":rpc_ssl",
+        ":rpc_tls",
+    ],
+)
+
+# Build target for scala pb options.
+proto_library(
+    name = "scalapb_proto",
+    srcs = ["src/scalapb.proto"],
+    strip_import_prefix = "/wrappers/rpc/src",
+    deps = ["@protobuf//:descriptor_proto"],
+)
+
+scala_test(
+    name = "rpc_context_suite",
+    testonly = True,
+    srcs = [
+        "test/RPCContextSuite.scala",
+    ],
+    deps = [
+        ":rpc_context",
+        ":service_identity",
+        "//wrappers/util:databricks-test",
+        "@maven//:org_scala_lang_scala_library",
+    ],
+)

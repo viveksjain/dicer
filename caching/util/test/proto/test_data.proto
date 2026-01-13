@@ -1,0 +1,386 @@
+syntax = "proto2";
+
+package databricks.caching.test;
+
+import "scalapb.proto";
+
+option java_package = "com.databricks.caching.util.test";;
+option java_generate_equals_and_hash = true;
+option java_outer_classname = "TestDataProto";
+option java_multiple_files = true;
+option (scalapb.options) = {
+  package_name: "com.databricks.caching.util.test",
+  flat_package: true,
+};
+
+message Rfc1123TestDataP {
+  // A valid string that has the longest permitted length.
+  optional string longest_valid_string = 1;
+
+  // Valid RFC 1123 strings.
+  repeated string valid_strings = 2;
+
+  // An invalid string that exceeds the length limit.
+  optional string too_long_string = 3;
+
+  // Strings that do not conform to RFC 1123.
+  repeated string invalid_strings = 4;
+}
+
+message BuildInfoTestDataP {
+  message BuildInfoP {
+    // The branch name of the build, e.g. "master", or empty.
+    optional string branch_name = 1;
+
+    // The branch name label value of the build, e.g. "master" or "unknown".
+    optional string branch_name_label_value = 2;
+
+    // The commit time label value of the build.
+    optional string commit_time_label_value = 3;
+
+    // The commit time epoch millisecond value of the build.
+    optional int64 commit_time_epoch_millis = 4;
+
+    // The commit hash label value of the build.
+    optional string commit_hash_label_value = 5;
+  }
+
+  message BuildInfoTestCaseP {
+    // Input: the branch name of the build.
+    optional string input_branch_name = 1;
+
+    // Output: the parsed build info;
+    optional BuildInfoP expected_build_info = 2;
+  }
+
+  repeated BuildInfoTestCaseP test_cases = 1;
+}
+
+message EwmaAccumulatorTestDataP {
+
+  // Factory parameters.
+  message EwmaAccumulatorP {
+    optional double alpha = 1;
+
+    // Logically optional.
+    optional double seed_opt = 2;
+  }
+
+  // Action: assert that the accumulator's value equals `expected`.
+  message AssertValueEqualsP {
+    // The expected value of the accumulator.
+    optional double expected = 1;
+
+    // Logically optional, the debug message to use in case of failure.
+    optional string debug_message_opt = 2;
+  }
+
+  // Action: repeatedly append the same `value` to the accumulator by `count` times. After each
+  // append, if `expected_opt` is set, assert that the accumulator's value equals it.
+  message RepeatedAppendWithCheckP {
+    // The value to append to the accumulator.
+    optional int64 value = 1;
+
+    // The number of times to append `value`.
+    optional int64 count = 2;
+
+    // The expected value of the accumulator after each append.
+    optional double expected_opt = 3;
+  }
+
+  // Action: assert that the accumulator's value equals the reference accumulator's value.
+  message AssertAccumulatorsValueMatchP {}
+
+  // Represents the test action.
+  message TestActionP {
+    oneof action {
+      int64 append_value = 1; // Append the specified value to the accumulator.
+      int64 append_zeros = 2; // Append the specified number of zeros to the accumulator.
+      AssertValueEqualsP assert_value_equals = 3;
+      RepeatedAppendWithCheckP repeated_append_with_check = 4;
+      AssertAccumulatorsValueMatchP assert_accumulators_value_match = 5;
+    }
+  }
+
+  message TestCaseP {
+    // Factory parameters.
+    optional EwmaAccumulatorP ewma_accumulator = 1;
+
+    // A sequence of actions to perform on the accumulator.
+    repeated TestActionP actions = 2;
+
+    // A logically optional reference counter to compare against the accumulator.
+    optional EwmaAccumulatorP reference_ewma_accumulator = 3;
+
+    // A logically optional sequence of actions to perform on the reference counter.
+    repeated TestActionP reference_accumulator_actions = 4;
+  }
+
+  // Test cases for invalid inputs (including factory parameters and actions).
+  repeated TestCaseP invalid_cases = 1;
+
+  // Test case for valid inputs;
+  repeated TestCaseP valid_cases = 2;
+
+  // Verify append_zero correctness by comparing the value with a reference
+  // counter that calls append_value(0) n times.
+  optional TestCaseP append_zeros_and_compare = 3;
+}
+
+message EwmaCounterTestDataP {
+  // Factory method parameters for creating EwmaCounter instances.
+  message EwmaCounterP {
+    // Note that we omit the `start_time` parameter here, as we always use
+    // now as the start time in tests.
+    optional int32 half_life_seconds = 1;
+    optional double seed_opt = 2;
+  }
+
+  // Action: increment the EwmaCounter at `elapsed_ms` from start time by a specified `value`.
+  message IncrementByP {
+    optional int32 value = 1; // The value to increment by.
+    optional int64 elapsed_ms = 2; // The elapsed time in milliseconds since start.
+    optional bool perform_on_reference = 3; // Whether to perform on the reference EwmaCounter.
+  }
+
+  // Action: assert that the value of the EwmaCounter equals the expected value.
+  message AssertValueEqualsP {
+    optional int64 elapsed_ms = 1; // The elapsed time in milliseconds since start.
+    optional double expected = 2; // The expected value of the EwmaCounter.
+    optional int64 window_low_elapsed_ms = 3; // The lower bound of the value window since start.
+    optional int64 window_high_elapsed_ms = 4; // The upper bound of the value window since start.
+  }
+
+  // Action: assert that the value of the EwmaCounter is within the specified range, exclusive.
+  message AssertValueInRangeP {
+    optional int64 elapsed_ms = 1; // The elapsed time in milliseconds since start.
+    optional double min_value = 2; // The minimum expected value of the EwmaCounter.
+    optional double max_value = 3; // The maximum expected value of the EwmaCounter.
+    optional int64 window_low_elapsed_ms = 4; // The lower bound of the value window since start.
+    optional int64 window_high_elapsed_ms = 5; // The upper bound of the value window since start.
+  }
+
+  // Action: Repeatedly get the value of the EwmaCounter starting from `start_time + elapsed_ms`,
+  // with each get occurring every `repeat_interval_ms`. If `perform_on_reference` is true,
+  // the action is performed on the reference EwmaCounter, otherwise on the main EwmaCounter.
+  message RepeatedGetValueP {
+    optional int64 elapsed_ms = 1; // The elapsed time in milliseconds since start.
+    optional int32 repeat_count = 2; // The number of times to get the value.
+    optional int64 repeat_interval_ms = 3; // The interval between increments in milliseconds.
+    optional bool perform_on_reference = 4; // Whether to perform on the reference EwmaCounter.
+  }
+
+  // Action: repeatedly increment the EwmaCounter by a specified value starting from
+  // `start_time + elapsed_ms`, with each increment occurring every `repeat_interval_ms`.
+  // If `perform_on_reference` is true, the action is performed on the reference EwmaCounter,
+  // otherwise on the main EwmaCounter.
+  message RepeatedIncrementP {
+    optional int32 value = 1; // The value to increment by.
+    optional int64 elapsed_ms = 2; // The elapsed time in milliseconds since start.
+    optional int32 repeat_count = 3; // The number of times to repeat the increment.
+    optional int64 repeat_interval_ms = 4; // The interval between increments in milliseconds.
+    optional bool perform_on_reference = 5; // Whether to perform on the reference EwmaCounter.
+  }
+
+  // Action: repeated increment the EwmaCounter where the value of each increment is a
+  // Poisson-distributed random sample with a specified mean.
+  message RepeatedIncrementByPoissonSample {
+    optional double poisson_mean = 1; // The mean of the Poisson distribution.
+    optional int64 elapsed_ms = 2; // The elapsed time in milliseconds since start.
+    optional int64 repeat_interval_ms = 3; // The interval between increments in milliseconds.
+    optional int32 repeat_count = 4; // The number of times to repeat the increment.
+  }
+
+  // Action: assert that the value of the EwmaCounter at `start_time + main_elapsed_ms` matches
+  // the value of the reference EwmaCounter at `start_time + reference_elapsed_ms`.
+  message AssertCountersValueMatchP {
+    optional int64 main_elapsed_ms = 1;
+    optional int64 reference_elapsed_ms = 2;
+  }
+
+  // Represents the test action.
+  message ActionP {
+    oneof action {
+      IncrementByP increment_by = 1;
+      AssertValueEqualsP assert_value_equals = 2;
+      AssertValueInRangeP assert_value_in_range = 3;
+      RepeatedGetValueP repeated_get_value = 4;
+      RepeatedIncrementP repeated_increment = 5;
+      RepeatedIncrementByPoissonSample repeated_increment_by_poisson_sample = 6;
+      AssertCountersValueMatchP assert_counters_value_match = 7;
+    }
+  }
+
+  // A test case for the EwmaCounter.
+  message TestCaseP {
+    // The factory parameters for creating the EwmaCounter.
+    optional EwmaCounterP ewma_counter = 1;
+
+    // The actions to perform on the counter. Some actions have a `perform_on_reference`
+    // field that indicates whether the action should be performed on the reference counter.
+    repeated ActionP actions = 2;
+
+    // A logically optional error message to verify against for an invalid case.
+    optional string error_message_opt = 3;
+  }
+
+  repeated TestCaseP invalid_cases = 1; // Cases for invalid inputs.
+  repeated TestCaseP valid_cases = 2; // Cases for valid inputs.
+  repeated TestCaseP reference_cases = 3; // Cases that use a reference EwmaCounter for comparison.
+}
+
+
+message LossyEwmaCounterTestDataP {
+  // Indicates to use a random valid sample.
+  message RandomValidP {}
+
+  // For Config.error only, use the 1/10 value of Config.support.
+  message OneTenthSupportP {}
+
+  // Start time in milliseconds since epoch.
+  message StartTimeP {
+    oneof time {
+      int64 unix_epoch_millis = 1; // Use the specified time in milliseconds since Unix epoch.
+      RandomValidP random = 2; // Use a random value.
+    }
+  }
+
+  message SupportP {
+    oneof support {
+      RandomValidP random = 1; // Use a random value within the valid range.
+      double value = 2; // Use the specified value.
+    }
+  }
+
+  message ErrorP {
+    oneof error {
+      OneTenthSupportP one_tenth_support = 1; // Use 1/10 of the support value.
+      double value = 2; // Use the specified value.
+    }
+  }
+
+  message HalfLifeSecondP {
+    oneof half_life_seconds {
+      double value = 1; // Use the specified half-life in seconds.
+      RandomValidP random = 2; // Use a random value within the valid range.
+    }
+  }
+
+  // Factory parameters.
+  message LossyEwmaCounterP {
+    optional StartTimeP start_time = 1;
+    optional SupportP support = 2;
+    optional ErrorP error = 3;
+    optional HalfLifeSecondP half_life_seconds = 4;
+  }
+
+  // Describes a key in the counter.
+  message KeyP {
+    optional string key = 1;
+    optional double contribution = 2;
+  }
+
+  // The increment value for the key.
+  message IncrementValueP {
+    oneof increment_value {
+      int32 value = 1; // The increment value.
+      RandomValidP random = 2; // Use a random valid value.
+    }
+  }
+
+  // One-time action: increment the counter for a key by a specified value at now.
+  message IncrementByP {
+    optional string key = 1; // The key to increment.
+    optional IncrementValueP value = 2; // The value to increment by.
+  }
+
+  // One-time action: asserts that the hot keys returned match the expected hot keys.
+  message AssertHotKeysEqualsP {
+    repeated KeyP expected = 1; // The expected hot keys.
+  }
+
+  // One-time action: advances the clock by `ms` milliseconds. Negative `ms` are allowed
+  // indicating the clock moves backwards.
+  message AdvanceClockP {
+    optional int64 ms = 1;
+  }
+
+  // Defines actions that execute once.
+  message OneTimeActionP {
+    oneof action {
+      IncrementByP increment_by = 1;
+      AssertHotKeysEqualsP check_hot_keys = 2;
+      AdvanceClockP advance_clock = 3;
+    }
+  }
+
+  // Defines actions that execute repeatedly.
+  message RepeatedActionP {
+    // The number of times to repeat the actions.
+    optional int32 repeat_count = 1;
+
+    // The list of actions to perform repeatedly.
+    repeated OneTimeActionP actions = 2;
+  }
+
+  // Represents a test action.
+  message TestActionP {
+    oneof action {
+      OneTimeActionP one_time_action = 1; // A single action to perform once.
+      RepeatedActionP repeated_action = 2; // A sequence of actions to perform repeatedly.
+    }
+  }
+
+  message TestCaseP {
+    // The name of this test case, used for debugging and helping find the relevant proto entry
+    // in the test data.
+    optional string test_case_name = 1;
+
+    // Factory parameters for creating the LossyEwmaCounter.
+    optional LossyEwmaCounterP lossy_ewma_counter = 2;
+
+    // A sequence of actions to perform on the counter.
+    repeated TestActionP actions = 3;
+
+    // A logically optional error message to verify against for an invalid case.
+    optional string error_message_opt = 4;
+
+    // Logically optional: the number of times to run this test case. Useful for running the
+    // same test case multiple times with different random values. None means run once.
+    optional int32 repeated_count_opt = 5;
+
+    // Logically optional: the interval elapsed in milliseconds between repeated actions.
+    optional int64 repeated_interval_ms_opt = 6;
+
+    // Logically optional: if true, asserts that total sum and amplification overflows have
+    // occurred.
+    optional bool expected_overflows_opt = 7;
+  }
+
+  // A complex test case that we choose to hardcode to avoid making the proto too complex.
+  // See `test("Randomized")` in LossyEwmaCounterSuite.scala for test details.
+  message RandomizedReferenceTestCaseP {
+    optional bool requires_hardcoding = 1;
+  }
+
+  repeated TestCaseP invalid_cases = 1; // Cases for invalid inputs.
+  repeated TestCaseP valid_cases = 2; // Cases for valid inputs.
+  optional RandomizedReferenceTestCaseP randomized_with_reference_case = 3;
+}
+
+// Tests for verifying the correctness of ProtocolDuration parsing logic.
+message ProtocolDurationTestDataP {
+
+  repeated TestCaseP valid_cases = 1;
+  repeated TestCaseP invalid_cases = 2;
+
+  message TestCaseP {
+    optional string name = 1; // The name of the test case.
+    oneof duration {
+      int64 nanos = 2; // Duration in nanoseconds.
+      int64 micros = 3; // Duration in microseconds.
+      int64 millis = 4; // Duration in milliseconds.
+      int64 seconds = 5; // Duration in seconds.
+    }
+  }
+}

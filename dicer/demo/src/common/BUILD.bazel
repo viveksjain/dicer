@@ -1,0 +1,14 @@
+load("@rules_scala//scala:scala.bzl", "scala_library")
+
+package(
+    default_visibility = ["//dicer/demo:__subpackages__"],
+)
+
+scala_library(
+    name = "common",
+    srcs = ["DemoCommon.scala"],
+    deps = [
+        "//dicer/external:external_common",
+        "@maven//:com_google_guava_guava",
+    ],
+)

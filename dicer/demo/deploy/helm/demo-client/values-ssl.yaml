@@ -1,0 +1,16 @@
+# SSL/TLS overrides for demo-client Helm chart.
+#
+# This file is used in conjunction with values.yaml when running the demo
+# with SSL/TLS enabled.
+#
+# Usage: helm install demo-client dicer/demo/deploy/helm/demo-client/ \
+#          -f dicer/demo/deploy/helm/demo-client/values-ssl.yaml
+
+# TLS configuration
+tls:
+  enabled: true
+  secretName: demo-client-tls
+  mountPath: /etc/demo-client/tls
+  certFile: cert.pem
+  keyFile: key.pem
+  caFile: ca.pem
