@@ -18,7 +18,7 @@ jobs:
         with:
           # Disable the cache to avoid any possibility of cache pollution, and since we don't expect
           # very frequent commits.
-          cache-save: true
+          cache-save: false
 
       - name: Run tests
         run: bazel test //...
